@@ -15,6 +15,15 @@ interface AddItemModalProps {
 
 const CATEGORIES: WardrobeCategory[] = ['dress', 'hairstyle', 'accessory', 'makeup']
 
+// Стиль для числовых полей (мобильная совместимость)
+const numberInputClass = `
+  w-full px-4 py-2.5 rounded-xl border border-romantic-gold/30 
+  bg-white/70 text-romantic-dark font-nunito text-base
+  placeholder:text-romantic-dark/30
+  focus:outline-none focus:border-romantic-gold focus:ring-2 focus:ring-romantic-gold/20
+  transition-all
+`
+
 export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalProps) {
   const createItem = useWardrobeStore((state) => state.createItem)
 
@@ -107,7 +116,7 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
             onChange={(e) => setName(e.target.value)}
             placeholder="Например: Плащ тайны"
             className="w-full px-4 py-2.5 rounded-xl border border-romantic-gold/30 
-                       bg-white/70 text-romantic-dark font-nunito
+                       bg-white/70 text-romantic-dark font-nunito text-base
                        placeholder:text-romantic-dark/30
                        focus:outline-none focus:border-romantic-gold focus:ring-2 focus:ring-romantic-gold/20
                        transition-all"
@@ -136,7 +145,7 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
                 `}
               >
                 <span className="text-lg">{CATEGORY_ICONS[cat]}</span>
-                {CATEGORY_LABELS[cat]}
+                <span className="hidden sm:inline">{CATEGORY_LABELS[cat]}</span>
               </button>
             ))}
           </div>
@@ -150,13 +159,12 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
             </label>
             <input
               type="number"
+              inputMode="numeric"
+              pattern="[0-9]*"
               min={1}
               value={season}
               onChange={(e) => setSeason(Math.max(1, parseInt(e.target.value) || 1))}
-              className="w-full px-4 py-2.5 rounded-xl border border-romantic-gold/30 
-                         bg-white/70 text-romantic-dark font-nunito
-                         focus:outline-none focus:border-romantic-gold focus:ring-2 focus:ring-romantic-gold/20
-                         transition-all"
+              className={numberInputClass}
             />
           </div>
           <div>
@@ -165,13 +173,12 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
             </label>
             <input
               type="number"
+              inputMode="numeric"
+              pattern="[0-9]*"
               min={1}
               value={episode}
               onChange={(e) => setEpisode(Math.max(1, parseInt(e.target.value) || 1))}
-              className="w-full px-4 py-2.5 rounded-xl border border-romantic-gold/30 
-                         bg-white/70 text-romantic-dark font-nunito
-                         focus:outline-none focus:border-romantic-gold focus:ring-2 focus:ring-romantic-gold/20
-                         transition-all"
+              className={numberInputClass}
             />
           </div>
         </div>
@@ -221,12 +228,14 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
               <Diamond size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400" />
               <input
                 type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 min={1}
                 value={diamondCost || ''}
                 onChange={(e) => setDiamondCost(Math.max(0, parseInt(e.target.value) || 0))}
                 placeholder="Например: 30"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-blue-300 
-                           bg-white/70 text-romantic-dark font-nunito
+                           bg-white/70 text-romantic-dark font-nunito text-base
                            placeholder:text-romantic-dark/30
                            focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200
                            transition-all"
@@ -276,7 +285,7 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
             placeholder="Описание наряда, впечатления..."
             rows={2}
             className="w-full px-4 py-2.5 rounded-xl border border-romantic-gold/30 
-                       bg-white/70 text-romantic-dark font-nunito resize-none
+                       bg-white/70 text-romantic-dark font-nunito text-base resize-none
                        placeholder:text-romantic-dark/30
                        focus:outline-none focus:border-romantic-gold focus:ring-2 focus:ring-romantic-gold/20
                        transition-all"

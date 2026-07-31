@@ -36,6 +36,19 @@
   ::-webkit-scrollbar-thumb:hover {
     background: #c41e3a;
   }
+
+  /* Мобильная оптимизация — предотвращает зум на iOS при фокусе */
+  @media screen and (max-width: 768px) {
+    input[type="text"],
+    input[type="number"],
+    input[type="search"],
+    input[type="email"],
+    input[type="password"],
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+  }
 }
 
 @layer components {
@@ -62,5 +75,21 @@
       radial-gradient(ellipse at 20% 50%, rgba(212, 167, 116, 0.08) 0%, transparent 50%),
       radial-gradient(ellipse at 80% 20%, rgba(196, 30, 58, 0.05) 0%, transparent 50%),
       radial-gradient(ellipse at 50% 80%, rgba(45, 27, 78, 0.05) 0%, transparent 50%);
+  }
+
+  /* Убираем стрелки в number-полях (опционально) */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+  }
+
+  /* Скрываем скроллбар для категорий (но сохраняем прокрутку) */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }

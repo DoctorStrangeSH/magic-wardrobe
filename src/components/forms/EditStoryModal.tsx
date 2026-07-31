@@ -1,14 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import ImageUpload from '../ui/ImageUpload'
 import { useWardrobeStore } from '../../store/wardrobeStore'
-import { Sparkles } from 'lucide-react'
-import type { StoryStatus } from '../../core/types/wardrobe'
+import { Sparkles, Trash2 } from 'lucide-react'
+import type { Story, StoryStatus } from '../../core/types/wardrobe'
 
-interface AddStoryModalProps {
+interface EditStoryModalProps {
   isOpen: boolean
   onClose: () => void
+  story: Story | null
 }
 
 const STATUS_OPTIONS: { value: StoryStatus; label: string }[] = [
@@ -17,7 +18,6 @@ const STATUS_OPTIONS: { value: StoryStatus; label: string }[] = [
   { value: 'paused', label: '⏸️ Пауза' },
 ]
 
-// Стиль для числовых полей (мобильная совместимость)
 const numberInputClass = `
   w-full px-4 py-2.5 rounded-xl border border-romantic-gold/30 
   bg-white/70 text-romantic-dark font-nunito text-base
@@ -26,8 +26,8 @@ const numberInputClass = `
   transition-all
 `
 
-export default function AddStoryModal({ isOpen, onClose }: AddStoryModalProps) {
-  const createStory = useWardrobeStore((state) => state.createStory)
+export default function EditStoryModal({ isOpen, onClose, story }: EditStoryModalProps) {
+  const { updateStory, deleteStory } = useWardrobeStore()
 
   const [title, setTitle] = useState('')
   const [cover, setCover] = useState<string | null>(null)
@@ -37,7 +37,24 @@ export default function AddStoryModal({ isOpen, onClose }: AddStoryModalProps) {
   const [currentEpisode, setCurrentEpisode] = useState(1)
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [error, setError] = useState('')
+
+  // Заполняем форму данными истории при открытии
+  useEffect(() => {
+    if (story) {
+      setTitle(story.title)
+      setCover(story.cover)
+      setTotalSeasons(story.totalSeasons)
+      setStatus(story.status)
+      setCurrentSeason(story.currentSeason)
+      setCurrentEpisode(story.currentEpisode)
+      setNotes(story.notes)
+      setShowDeleteConfirm(false)
+      setError('')
+    }
+  }, [story, isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,9 +65,11 @@ export default function AddStoryModal({ isOpen, onClose }: AddStoryModalProps) {
       return
     }
 
+    if (!story) return
+
     setIsSubmitting(true)
     try {
-      await createStory({
+      await updateStory(story.id, {
         title: title.trim(),
         cover,
         totalSeasons,
@@ -59,26 +78,34 @@ export default function AddStoryModal({ isOpen, onClose }: AddStoryModalProps) {
         currentEpisode,
         notes: notes.trim(),
       })
-
-      // Сброс формы
-      setTitle('')
-      setCover(null)
-      setTotalSeasons(1)
-      setStatus('playing')
-      setCurrentSeason(1)
-      setCurrentEpisode(1)
-      setNotes('')
       onClose()
     } catch (err) {
-      setError('Ошибка при создании истории')
+      setError('Ошибка при обновлении истории')
       console.error(err)
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const handleDelete = async () => {
+    if (!story) return
+
+    setIsDeleting(true)
+    try {
+      await deleteStory(story.id)
+      onClose()
+    } catch (err) {
+      setError('Ошибка при удалении истории')
+      console.error(err)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  if (!story) return null
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Новая история" size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title="Редактировать историю" size="md">
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Название */}
         <div>
@@ -95,7 +122,6 @@ export default function AddStoryModal({ isOpen, onClose }: AddStoryModalProps) {
                        placeholder:text-romantic-dark/30
                        focus:outline-none focus:border-romantic-gold focus:ring-2 focus:ring-romantic-gold/20
                        transition-all"
-            autoFocus
           />
         </div>
 
@@ -213,13 +239,46 @@ export default function AddStoryModal({ isOpen, onClose }: AddStoryModalProps) {
         )}
 
         {/* Кнопки */}
-        <div className="flex justify-end gap-3 pt-2">
-          <Button variant="ghost" onClick={onClose} type="button">
-            Отмена
-          </Button>
-          <Button type="submit" isLoading={isSubmitting} icon={<Sparkles size={18} />}>
-            Создать историю
-          </Button>
+        <div className="flex items-center justify-between pt-2">
+          {/* Кнопка удаления слева */}
+          {!showDeleteConfirm ? (
+            <Button
+              variant="danger"
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              icon={<Trash2 size={16} />}
+            >
+              Удалить
+            </Button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="danger"
+                type="button"
+                onClick={handleDelete}
+                isLoading={isDeleting}
+              >
+                Подтвердить
+              </Button>
+              <Button
+                variant="ghost"
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                Отмена
+              </Button>
+            </div>
+          )}
+
+          {/* Кнопки справа */}
+          <div className="flex gap-3">
+            <Button variant="ghost" onClick={onClose} type="button">
+              Отмена
+            </Button>
+            <Button type="submit" isLoading={isSubmitting} icon={<Sparkles size={18} />}>
+              Сохранить
+            </Button>
+          </div>
         </div>
       </form>
     </Modal>

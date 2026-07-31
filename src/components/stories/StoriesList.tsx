@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, BookOpen, Sparkles } from 'lucide-react'
 import StoryCard from './StoryCard'
 import AddStoryModal from '../forms/AddStoryModal'
+import EditStoryModal from '../forms/EditStoryModal'
 import { useWardrobeStore } from '../../store/wardrobeStore'
+import type { Story } from '../../core/types/wardrobe'
 
 export default function StoriesList() {
   const navigate = useNavigate()
-  const { stories, loadStories, overallStats, selectStory } = useWardrobeStore()
+  const { stories, loadStories, overallStats } = useWardrobeStore()
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [editingStory, setEditingStory] = useState<Story | null>(null)
 
   // Загружаем истории при монтировании
   useEffect(() => {
@@ -28,6 +31,11 @@ export default function StoriesList() {
   // Обработчик клика по карточке истории
   const handleStoryClick = (storyId: string) => {
     navigate(`/story/${storyId}`)
+  }
+
+  // Обработчик редактирования
+  const handleEditStory = (story: Story) => {
+    setEditingStory(story)
   }
 
   return (
@@ -79,7 +87,6 @@ export default function StoriesList() {
       {/* Сетка историй или пустое состояние */}
       {stories.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-4">
-          {/* Декоративная иконка */}
           <div className="w-32 h-32 mb-6 rounded-full bg-romantic-pink/30 flex items-center justify-center animate-float">
             <BookOpen size={48} className="text-romantic-gold/50" />
           </div>
@@ -92,7 +99,6 @@ export default function StoriesList() {
             и начать отслеживать свой гардероб ✨
           </p>
 
-          {/* Декоративные элементы */}
           <div className="flex gap-1 mt-8">
             {[0, 1, 2].map((i) => (
               <div
@@ -111,6 +117,7 @@ export default function StoriesList() {
               story={story}
               progress={storyProgressMap[story.id] || 0}
               onClick={() => handleStoryClick(story.id)}
+              onEdit={() => handleEditStory(story)}
             />
           ))}
         </div>
@@ -120,6 +127,13 @@ export default function StoriesList() {
       <AddStoryModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+      />
+
+      {/* Модалка редактирования истории */}
+      <EditStoryModal
+        isOpen={editingStory !== null}
+        onClose={() => setEditingStory(null)}
+        story={editingStory}
       />
     </div>
   )

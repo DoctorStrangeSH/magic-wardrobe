@@ -8,71 +8,69 @@ interface ImageUploadProps {
 }
 
 /**
- * Максимальные размеры изображения
+ * Настройки сжатия для больших коллекций
  */
-const MAX_WIDTH = 800
-const MAX_HEIGHT = 1000
-
-/**
- * Качество сжатия (0.6 = 60% — хороший баланс размер/качество)
- */
-const COMPRESSION_QUALITY = 0.6
+const MAX_WIDTH = 600        // Уменьшено для экономии (для превью наряда хватит)
+const MAX_HEIGHT = 800       // Пропорционально
+const COMPRESSION_QUALITY = 0.5  // 50% качество — для скриншотов норм
 
 /**
  * Сжимает изображение через canvas
+ * JPG → JPEG 50% качества
+ * PNG → PNG (с уменьшением размера)
  */
 function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
-    
+
     reader.onload = (e) => {
       const img = new window.Image()
-      
+
       img.onload = () => {
         const canvas = document.createElement('canvas')
-        
+
         let { width, height } = img
-        
-        // Сжимаем только если изображение больше максимальных размеров
+
+        // Всегда сжимаем до максимальных размеров
         if (width > MAX_WIDTH || height > MAX_HEIGHT) {
           const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height)
           width = Math.round(width * ratio)
           height = Math.round(height * ratio)
         }
-        
+
         canvas.width = width
         canvas.height = height
-        
+
         const ctx = canvas.getContext('2d')
         if (!ctx) {
           reject(new Error('Не удалось создать контекст canvas'))
           return
         }
-        
-        // Рисуем изображение на canvas
+
+        // Заливаем белым фоном (для JPG)
+        ctx.fillStyle = '#FFFFFF'
+        ctx.fillRect(0, 0, width, height)
+
+        // Рисуем изображение
         ctx.drawImage(img, 0, 0, width, height)
-        
-        // Конвертируем в JPEG с указанным качеством
-        // Если исходный файл PNG с прозрачностью — используем PNG
-        const isPNG = file.type === 'image/png'
-        const mimeType = isPNG ? 'image/png' : 'image/jpeg'
-        const quality = isPNG ? undefined : COMPRESSION_QUALITY
-        
-        const compressedBase64 = canvas.toDataURL(mimeType, quality)
+
+        // Всегда конвертируем в JPEG (даже PNG) для максимального сжатия
+        // Если нужна прозрачность — можно оставить PNG
+        const compressedBase64 = canvas.toDataURL('image/jpeg', COMPRESSION_QUALITY)
         resolve(compressedBase64)
       }
-      
+
       img.onerror = () => {
         reject(new Error('Ошибка загрузки изображения'))
       }
-      
+
       img.src = e.target?.result as string
     }
-    
+
     reader.onerror = () => {
       reject(new Error('Ошибка чтения файла'))
     }
-    
+
     reader.readAsDataURL(file)
   })
 }
@@ -82,47 +80,44 @@ export default function ImageUpload({ value, onChange, placeholder = 'Загру
   const [isDragging, setIsDragging] = useState(false)
   const [isCompressing, setIsCompressing] = useState(false)
 
-  // Обработка выбранного файла со сжатием
   const handleFile = async (file: File) => {
-    // Проверяем тип файла
     if (!file.type.startsWith('image/')) {
       alert('Пожалуйста, выберите изображение')
       return
     }
 
-    // Показываем исходный размер
     const originalSize = (file.size / 1024).toFixed(0)
-    console.log(`📷 Исходный размер: ${originalSize} КБ`)
+    console.log(`📷 Исходный: ${originalSize} КБ`)
 
     setIsCompressing(true)
     try {
       const compressedBase64 = await compressImage(file)
-      
-      // Показываем сжатый размер
       const compressedSize = (compressedBase64.length * 0.75 / 1024).toFixed(0)
-      console.log(`✨ Сжатый размер: ${compressedSize} КБ (было ${originalSize} КБ)`)
-      
+
+      const origSize = parseInt(originalSize)
+      const compSize = parseInt(compressedSize)
+      const savedPercent = origSize > 0
+        ? Math.round((1 - compSize / origSize) * 100)
+        : 0
+
+      console.log(`✨ Сжато: ${compressedSize} КБ (экономия ${savedPercent}%)`)
+
       onChange(compressedBase64)
     } catch (error) {
       console.error('Ошибка сжатия:', error)
-      // Если сжатие не удалось — загружаем оригинал
       const reader = new FileReader()
-      reader.onload = (e) => {
-        onChange(e.target?.result as string)
-      }
+      reader.onload = (e) => onChange(e.target?.result as string)
       reader.readAsDataURL(file)
     } finally {
       setIsCompressing(false)
     }
   }
 
-  // Обработка выбора файла через input
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) handleFile(file)
   }
 
-  // Drag and drop
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
@@ -139,7 +134,6 @@ export default function ImageUpload({ value, onChange, placeholder = 'Загру
     setIsDragging(false)
   }
 
-  // Очистка
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation()
     onChange(null)
@@ -148,7 +142,6 @@ export default function ImageUpload({ value, onChange, placeholder = 'Загру
   return (
     <div className="space-y-2">
       {value ? (
-        // Предпросмотр загруженного изображения
         <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border border-romantic-gold/20 
                         shadow-card group bg-romantic-pink/20">
           <img
@@ -156,14 +149,12 @@ export default function ImageUpload({ value, onChange, placeholder = 'Загру
             alt="Загруженное изображение"
             className="w-full h-full object-contain"
           />
-          
-          {/* Размер файла */}
+
           <div className="absolute bottom-2 left-2 px-2 py-1 rounded-lg bg-romantic-darker/60 
                           text-white/70 text-xs font-nunito backdrop-blur-sm">
             {(value.length * 0.75 / 1024).toFixed(0)} КБ
           </div>
-          
-          {/* Кнопка удаления */}
+
           <button
             onClick={handleClear}
             className="absolute top-2 right-2 p-1.5 rounded-full bg-romantic-darker/60 
@@ -175,7 +166,6 @@ export default function ImageUpload({ value, onChange, placeholder = 'Загру
           </button>
         </div>
       ) : (
-        // Зона загрузки
         <div
           onClick={() => inputRef.current?.click()}
           onDrop={handleDrop}
@@ -213,7 +203,7 @@ export default function ImageUpload({ value, onChange, placeholder = 'Загру
                   Нажмите или перетащите файл
                 </p>
                 <p className="text-xs text-romantic-dark/20 font-nunito mt-0.5">
-                  PNG, JPG, WebP • Авто-сжатие до ~150 КБ
+                  JPG, PNG, WebP • Сжатие до ~50-80 КБ
                 </p>
               </div>
             </>

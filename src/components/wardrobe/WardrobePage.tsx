@@ -1,14 +1,15 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { ArrowLeft, Plus, Sparkles, Filter, Search } from 'lucide-react'
 import { useWardrobeStore } from '../../store/wardrobeStore'
 import CategoryTabs from './CategoryTabs'
 import ItemGrid from './ItemGrid'
 import ProgressBar from './ProgressBar'
 import AddItemModal from '../forms/AddItemModal'
+import EditItemModal from '../forms/EditItemModal'
 import Button from '../ui/Button'
-import type { WardrobeCategory } from '../../core/types/wardrobe'
-import { motion } from 'framer-motion'
+import type { WardrobeCategory, WardrobeItem } from '../../core/types/wardrobe'
 
 export default function WardrobePage() {
   const { storyId } = useParams<{ storyId: string }>()
@@ -33,6 +34,7 @@ export default function WardrobePage() {
   } = useWardrobeStore()
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<WardrobeItem | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
 
@@ -213,7 +215,11 @@ export default function WardrobePage() {
       </div>
 
       {/* Сетка нарядов */}
-      <ItemGrid items={filteredItems} isLoading={isLoading} />
+      <ItemGrid 
+        items={filteredItems} 
+        isLoading={isLoading} 
+        onEditItem={(item) => setEditingItem(item)}
+      />
 
       {/* Модалка добавления наряда */}
       {storyId && (
@@ -223,6 +229,13 @@ export default function WardrobePage() {
           storyId={storyId}
         />
       )}
+
+      {/* Модалка редактирования наряда */}
+      <EditItemModal
+        isOpen={editingItem !== null}
+        onClose={() => setEditingItem(null)}
+        item={editingItem}
+      />
     </div>
   )
 }

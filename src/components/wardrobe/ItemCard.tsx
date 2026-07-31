@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Diamond, Edit3, Trash2, MoreVertical, Eye, Star } from 'lucide-react'
 import type { WardrobeItem } from '../../core/types/wardrobe'
 import { useWardrobeStore } from '../../store/wardrobeStore'
@@ -129,15 +129,11 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
               <img
                 src={item.image}
                 alt={item.name}
-                className={`w-full h-auto max-h-[280px] object-contain transition-all duration-500 ${
-                  !item.isOwned ? 'grayscale opacity-60' : ''
-                }`}
+                className="w-full h-auto max-h-[280px] object-contain transition-all duration-500"
               />
             </div>
           ) : (
-            <div className={`py-8 text-center transition-all duration-500 ${
-              !item.isOwned ? 'grayscale opacity-60' : ''
-            }`}>
+            <div className="py-8 text-center transition-all duration-500">
               <span className="text-5xl">
                 {item.category === 'dress' ? '👗' :
                  item.category === 'hairstyle' ? '💇‍♀️' :
@@ -147,17 +143,21 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
           )}
 
           {/* Плашка "Не получено" */}
-          {!item.isOwned && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <AnimatePresence>
+            {!item.isOwned && (
               <motion.div
-                animate={{ opacity: [0.3, 0.6, 0.3] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="px-4 py-2 rounded-full bg-romantic-darker/70 text-white/90 text-xs font-nunito font-medium backdrop-blur-sm"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none"
               >
-                🔒 Не получено
+                <div className="px-4 py-2 rounded-full bg-romantic-darker/70 text-white/90 text-xs font-nunito font-medium backdrop-blur-sm">
+                  🔒 Не получено
+                </div>
               </motion.div>
-            </div>
-          )}
+            )}
+          </AnimatePresence>
 
           {/* Кнопка просмотра (десктоп) */}
           <motion.div
@@ -173,7 +173,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
             </span>
           </motion.div>
 
-          {/* Бейдж "Особые условия" — красивый и заметный */}
+          {/* Бейдж "Особые условия" */}
           {!item.isOwned && hasSpecialCondition && (
             <motion.div
               initial={{ scale: 0 }}
@@ -190,7 +190,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
             </motion.div>
           )}
 
-          {/* Кнопка меню (всегда видна) */}
+          {/* Кнопка меню */}
           <div className="absolute top-2 right-2" data-no-detail>
             <motion.button
               whileTap={{ scale: 0.9 }}
@@ -204,72 +204,75 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
           </div>
 
           {/* Выпадающее меню */}
-          {showMenu && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: -5 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="absolute top-12 right-2 z-20 bg-white/95 backdrop-blur-sm 
-                         rounded-2xl shadow-lg border border-romantic-gold/20 overflow-hidden min-w-[140px]"
-              onClick={(e) => e.stopPropagation()}
-              data-no-detail
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  e.preventDefault()
-                  setShowDetail(true)
-                  setShowMenu(false)
-                }}
-                className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
-                           text-romantic-dark/70 hover:bg-romantic-pink/30 transition-colors
-                           border-b border-romantic-pink/30"
+          <AnimatePresence>
+            {showMenu && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8, y: -5 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.8, y: -5 }}
+                className="absolute top-12 right-2 z-20 bg-white/95 backdrop-blur-sm 
+                           rounded-2xl shadow-lg border border-romantic-gold/20 overflow-hidden min-w-[140px]"
+                onClick={(e) => e.stopPropagation()}
+                data-no-detail
               >
-                <Eye size={16} />
-                Подробнее
-              </button>
-              <button
-                onClick={handleEdit}
-                className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
-                           text-romantic-dark/70 hover:bg-romantic-pink/30 
-                           hover:text-romantic-gold transition-colors
-                           border-b border-romantic-pink/30"
-              >
-                <Edit3 size={16} />
-                Редактировать
-              </button>
-              {!showDeleteConfirm ? (
                 <button
-                  onClick={handleShowDelete}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    setShowDetail(true)
+                    setShowMenu(false)
+                  }}
                   className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
-                             text-romantic-dark/70 hover:bg-red-50 
-                             hover:text-romantic-crimson transition-colors"
+                             text-romantic-dark/70 hover:bg-romantic-pink/30 transition-colors
+                             border-b border-romantic-pink/30"
                 >
-                  <Trash2 size={16} />
-                  Удалить
+                  <Eye size={16} />
+                  Подробнее
                 </button>
-              ) : (
-                <div className="p-3 space-y-2 bg-red-50/50">
-                  <p className="text-xs text-romantic-dark/70 font-nunito text-center">
-                    Удалить наряд?
-                  </p>
-                  <div className="flex gap-2 justify-center">
-                    <button
-                      onClick={handleDelete}
-                      className="px-3 py-1.5 rounded-lg bg-romantic-crimson text-white text-xs font-bold"
-                    >
-                      Да
-                    </button>
-                    <button
-                      onClick={handleCancelDelete}
-                      className="px-3 py-1.5 rounded-lg bg-white/80 text-romantic-dark text-xs"
-                    >
-                      Нет
-                    </button>
+                <button
+                  onClick={handleEdit}
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
+                             text-romantic-dark/70 hover:bg-romantic-pink/30 
+                             hover:text-romantic-gold transition-colors
+                             border-b border-romantic-pink/30"
+                >
+                  <Edit3 size={16} />
+                  Редактировать
+                </button>
+                {!showDeleteConfirm ? (
+                  <button
+                    onClick={handleShowDelete}
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
+                               text-romantic-dark/70 hover:bg-red-50 
+                               hover:text-romantic-crimson transition-colors"
+                  >
+                    <Trash2 size={16} />
+                    Удалить
+                  </button>
+                ) : (
+                  <div className="p-3 space-y-2 bg-red-50/50">
+                    <p className="text-xs text-romantic-dark/70 font-nunito text-center">
+                      Удалить наряд?
+                    </p>
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        onClick={handleDelete}
+                        className="px-3 py-1.5 rounded-lg bg-romantic-crimson text-white text-xs font-bold"
+                      >
+                        Да
+                      </button>
+                      <button
+                        onClick={handleCancelDelete}
+                        className="px-3 py-1.5 rounded-lg bg-white/80 text-romantic-dark text-xs"
+                      >
+                        Нет
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </motion.div>
-          )}
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Информация */}

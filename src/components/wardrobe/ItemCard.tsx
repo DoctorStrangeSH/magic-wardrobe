@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Diamond, Edit3, Trash2, MoreVertical, Eye, AlertCircle } from 'lucide-react'
+import { Diamond, Edit3, Trash2, MoreVertical, Eye, AlertCircle, Star } from 'lucide-react'
 import type { WardrobeItem } from '../../core/types/wardrobe'
 import { useWardrobeStore } from '../../store/wardrobeStore'
 import Checkbox from '../ui/Checkbox'
@@ -23,15 +23,18 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
   const [showSparkle, setShowSparkle] = useState(false)
   const [sparklePos, setSparklePos] = useState({ x: 0, y: 0 })
   const cardRef = useRef<HTMLDivElement>(null)
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const handleToggleOwned = async (e?: React.MouseEvent | React.TouchEvent) => {
-    if (e) {
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-      setSparklePos({
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
-      })
-    }
+  const handleToggleOwned = async (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    setSparklePos({
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    })
+    
     setShowSparkle(true)
     setTimeout(() => setShowSparkle(false), 1000)
     await toggleOwned(item.id)
@@ -63,7 +66,27 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
     setShowDeleteConfirm(false)
   }
 
-  // Проверяем, есть ли примечание (особые условия получения)
+  const handleMenuToggle = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setShowMenu(!showMenu)
+    setShowDeleteConfirm(false)
+  }
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Не открываем детали, если клик был по кнопкам или чекбоксу
+    const target = e.target as HTMLElement
+    if (
+      target.closest('button') || 
+      target.closest('input') || 
+      target.closest('label') ||
+      target.closest('[data-no-detail]')
+    ) {
+      return
+    }
+    setShowDetail(true)
+  }
+
   const hasSpecialCondition = item.notes && item.notes.trim().length > 0
 
   return (
@@ -88,9 +111,10 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
           setShowMenu(false)
         }}
         whileHover={{ scale: 1.02 }}
+        onClick={handleCardClick}
         className={`
           group relative romantic-card rounded-2xl overflow-hidden
-          shadow-card hover:shadow-card-hover
+          shadow-card hover:shadow-card-hover cursor-pointer
           transition-shadow duration-300
           ${item.isOwned ? 'ring-1 ring-romantic-gold/40' : ''}
         `}
@@ -99,11 +123,8 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
         {!item.isFree && !item.isOwned && <ShimmerEffect />}
 
         {/* Изображение */}
-        <div 
-          className="relative w-full bg-gradient-to-br from-romantic-pink/50 to-romantic-dark/5 
-                      flex items-center justify-center overflow-hidden cursor-pointer"
-          onClick={() => setShowDetail(true)}
-        >
+        <div className="relative w-full bg-gradient-to-br from-romantic-pink/50 to-romantic-dark/5 
+                        flex items-center justify-center overflow-hidden">
           {item.image ? (
             <div className="w-full" style={{ maxHeight: '280px' }}>
               <img
@@ -130,35 +151,27 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
           {!item.isOwned && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <motion.div
-                animate={{ opacity: [0.3, 0.5, 0.3] }}
+                animate={{ opacity: [0.3, 0.6, 0.3] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="px-4 py-2 rounded-full bg-romantic-darker/70 text-white/80 text-xs font-nunito"
+                className="px-4 py-2 rounded-full bg-romantic-darker/70 text-white/90 text-xs font-nunito font-medium backdrop-blur-sm"
               >
                 🔒 Не получено
               </motion.div>
             </div>
           )}
 
-          {/* Кнопка просмотра (при наведении) */}
+          {/* Кнопка просмотра (десктоп) */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: isHovered ? 1 : 0 }}
+            animate={{ opacity: isHovered && !showMenu ? 1 : 0 }}
             className="absolute inset-0 bg-gradient-to-t from-romantic-darker/50 to-transparent 
-                       hidden sm:flex items-center justify-center"
+                       hidden sm:flex items-center justify-center pointer-events-none"
           >
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowDetail(true)
-              }}
-              className="px-4 py-2 rounded-xl bg-white/90 text-romantic-dark font-nunito text-sm
-                         flex items-center gap-2 shadow-lg"
-            >
+            <span className="px-4 py-2 rounded-xl bg-white/90 text-romantic-dark font-nunito text-sm
+                           flex items-center gap-2 shadow-lg">
               <Eye size={16} />
               Подробнее
-            </motion.button>
+            </span>
           </motion.div>
 
           {/* Бейдж "Есть" */}
@@ -174,28 +187,28 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
             </motion.div>
           )}
 
-          {/* Бейдж с условиями получения */}
+          {/* Бейдж "Особые условия" — красивый и заметный */}
           {!item.isOwned && hasSpecialCondition && (
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               className="absolute top-2 left-2"
             >
-              <Badge variant="crimson" icon={<AlertCircle size={12} />}>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full 
+                              bg-gradient-to-r from-amber-400 to-orange-400 
+                              text-white text-xs font-nunito font-bold shadow-lg
+                              border border-amber-300/50">
+                <Star size={12} className="fill-white" />
                 Особые условия
-              </Badge>
+              </div>
             </motion.div>
           )}
 
           {/* Кнопка меню (всегда видна) */}
-          <div className="absolute top-2 right-2">
+          <div className="absolute top-2 right-2" data-no-detail>
             <motion.button
               whileTap={{ scale: 0.9 }}
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowMenu(!showMenu)
-                setShowDeleteConfirm(false)
-              }}
+              onClick={handleMenuToggle}
               className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm 
                          flex items-center justify-center
                          text-romantic-dark/70 hover:bg-white transition-colors shadow-sm"
@@ -212,6 +225,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
               className="absolute top-12 right-2 z-20 bg-white/95 backdrop-blur-sm 
                          rounded-2xl shadow-lg border border-romantic-gold/20 overflow-hidden"
               onClick={(e) => e.stopPropagation()}
+              data-no-detail
             >
               <button
                 onClick={(e) => {
@@ -290,11 +304,15 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
               </Badge>
             )}
 
-            {/* Галочка "У меня есть" */}
-            <div onClick={(e) => e.stopPropagation()}>
+            {/* Галочка "У меня есть" — изолирована от кликов карточки */}
+            <div 
+              onClick={handleToggleOwned}
+              data-no-detail
+              className="cursor-pointer z-10 p-1 -m-1"
+            >
               <Checkbox
                 checked={item.isOwned}
-                onChange={() => handleToggleOwned()}
+                onChange={() => {}} // onChange не используется, клик обрабатывается на div
               />
             </div>
           </div>
@@ -319,7 +337,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
         isOpen={showDetail}
         onClose={() => setShowDetail(false)}
         item={item}
-        onToggleOwned={() => handleToggleOwned()}
+        onToggleOwned={() => handleToggleOwned({} as React.MouseEvent)}
       />
     </>
   )

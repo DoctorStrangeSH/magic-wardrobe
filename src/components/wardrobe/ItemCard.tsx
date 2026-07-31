@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Diamond, Edit3, Trash2, MoreVertical, Eye, AlertCircle, Star } from 'lucide-react'
+import { Diamond, Edit3, Trash2, MoreVertical, Eye, Star } from 'lucide-react'
 import type { WardrobeItem } from '../../core/types/wardrobe'
 import { useWardrobeStore } from '../../store/wardrobeStore'
 import Checkbox from '../ui/Checkbox'
@@ -23,7 +23,6 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
   const [showSparkle, setShowSparkle] = useState(false)
   const [sparklePos, setSparklePos] = useState({ x: 0, y: 0 })
   const cardRef = useRef<HTMLDivElement>(null)
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleToggleOwned = async (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation()
@@ -43,6 +42,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
   const handleDelete = async (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation()
     e.preventDefault()
+    setShowMenu(false)
     await deleteItem(item.id)
   }
 
@@ -57,7 +57,6 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
     e.stopPropagation()
     e.preventDefault()
     setShowDeleteConfirm(true)
-    setShowMenu(false)
   }
 
   const handleCancelDelete = (e: React.MouseEvent | React.TouchEvent) => {
@@ -74,7 +73,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
   }
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Не открываем детали, если клик был по кнопкам или чекбоксу
+    // Не открываем детали, если клик был по кнопкам, меню или чекбоксу
     const target = e.target as HTMLElement
     if (
       target.closest('button') || 
@@ -174,19 +173,6 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
             </span>
           </motion.div>
 
-          {/* Бейдж "Есть" */}
-          {item.isOwned && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="absolute top-2 left-2"
-            >
-              <Badge variant="gold" icon={<span>✅</span>}>
-                Есть
-              </Badge>
-            </motion.div>
-          )}
-
           {/* Бейдж "Особые условия" — красивый и заметный */}
           {!item.isOwned && hasSpecialCondition && (
             <motion.div
@@ -223,18 +209,20 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
               initial={{ opacity: 0, scale: 0.8, y: -5 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               className="absolute top-12 right-2 z-20 bg-white/95 backdrop-blur-sm 
-                         rounded-2xl shadow-lg border border-romantic-gold/20 overflow-hidden"
+                         rounded-2xl shadow-lg border border-romantic-gold/20 overflow-hidden min-w-[140px]"
               onClick={(e) => e.stopPropagation()}
               data-no-detail
             >
               <button
                 onClick={(e) => {
                   e.stopPropagation()
+                  e.preventDefault()
                   setShowDetail(true)
                   setShowMenu(false)
                 }}
                 className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
-                           text-romantic-dark/70 hover:bg-romantic-pink/30 transition-colors"
+                           text-romantic-dark/70 hover:bg-romantic-pink/30 transition-colors
+                           border-b border-romantic-pink/30"
               >
                 <Eye size={16} />
                 Подробнее
@@ -243,7 +231,8 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
                 onClick={handleEdit}
                 className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
                            text-romantic-dark/70 hover:bg-romantic-pink/30 
-                           hover:text-romantic-gold transition-colors"
+                           hover:text-romantic-gold transition-colors
+                           border-b border-romantic-pink/30"
               >
                 <Edit3 size={16} />
                 Редактировать
@@ -259,7 +248,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
                   Удалить
                 </button>
               ) : (
-                <div className="p-3 space-y-2">
+                <div className="p-3 space-y-2 bg-red-50/50">
                   <p className="text-xs text-romantic-dark/70 font-nunito text-center">
                     Удалить наряд?
                   </p>
@@ -272,7 +261,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
                     </button>
                     <button
                       onClick={handleCancelDelete}
-                      className="px-3 py-1.5 rounded-lg bg-romantic-pink/50 text-romantic-dark text-xs"
+                      className="px-3 py-1.5 rounded-lg bg-white/80 text-romantic-dark text-xs"
                     >
                       Нет
                     </button>
@@ -304,7 +293,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
               </Badge>
             )}
 
-            {/* Галочка "У меня есть" — изолирована от кликов карточки */}
+            {/* Галочка "У меня есть" */}
             <div 
               onClick={handleToggleOwned}
               data-no-detail
@@ -312,7 +301,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
             >
               <Checkbox
                 checked={item.isOwned}
-                onChange={() => {}} // onChange не используется, клик обрабатывается на div
+                onChange={() => {}}
               />
             </div>
           </div>

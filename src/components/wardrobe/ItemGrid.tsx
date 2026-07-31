@@ -6,9 +6,10 @@ import { Sparkles } from 'lucide-react'
 interface ItemGridProps {
   items: WardrobeItem[]
   isLoading?: boolean
+  onEditItem?: (item: WardrobeItem) => void
 }
 
-export default function ItemGrid({ items, isLoading }: ItemGridProps) {
+export default function ItemGrid({ items, isLoading, onEditItem }: ItemGridProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -40,7 +41,7 @@ export default function ItemGrid({ items, isLoading }: ItemGridProps) {
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
       <AnimatePresence mode="popLayout">
         {items.map((item) => (
-          <ItemCard key={item.id} item={item} />
+          <ItemCard key={item.id} item={item} onEdit={onEditItem} />
         ))}
       </AnimatePresence>
     </div>

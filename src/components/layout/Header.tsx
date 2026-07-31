@@ -1,11 +1,17 @@
-import { Sparkles, Search, Settings } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 export default function Header() {
+  const navigate = useNavigate()
+
   return (
     <header className="sticky top-0 z-10 bg-white/60 backdrop-blur-md border-b border-romantic-pink/50">
       <div className="flex items-center justify-between px-6 py-3">
         {/* Левая часть — приветствие */}
-        <div className="flex items-center gap-3">
+        <div 
+          className="flex items-center gap-3 cursor-pointer"
+          onClick={() => navigate('/')}
+        >
           <Sparkles size={22} className="text-romantic-gold animate-pulse-soft" />
           <h1 className="font-cormorant text-2xl font-bold text-romantic-dark tracking-wide">
             Клуб Романтики
@@ -15,19 +21,8 @@ export default function Header() {
           </span>
         </div>
 
-        {/* Правая часть — действия */}
+        {/* Правая часть */}
         <div className="flex items-center gap-3">
-          {/* Поиск (пока декоративный) */}
-          <button className="p-2 rounded-xl text-romantic-gold/60 hover:text-romantic-gold hover:bg-romantic-pink/30 transition-colors">
-            <Search size={20} />
-          </button>
-
-          {/* Настройки (пока декоративные) */}
-          <button className="p-2 rounded-xl text-romantic-gold/60 hover:text-romantic-gold hover:bg-romantic-pink/30 transition-colors">
-            <Settings size={20} />
-          </button>
-
-          {/* Аватар-заглушка */}
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-romantic-gold to-romantic-crimson 
                           flex items-center justify-center text-white font-nunito text-sm font-bold shadow-magic">
             КР

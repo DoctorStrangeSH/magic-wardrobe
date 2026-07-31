@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Library, BarChart3, Heart, BookOpen, Settings, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Library, BarChart3, Settings, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const menuItems = [
   { path: '/', label: 'Истории', icon: Library },
   { path: '/stats', label: 'Статистика', icon: BarChart3 },
-  { path: '/wishlist', label: 'Хочу получить', icon: Heart },
-  { path: '/journal', label: 'Дневник', icon: BookOpen },
   { path: '/settings', label: 'Настройки', icon: Settings },
 ]
 

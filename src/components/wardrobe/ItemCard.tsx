@@ -1,28 +1,31 @@
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Diamond, Heart, Edit3, Trash2 } from 'lucide-react'
+import { Diamond, Edit3, Trash2, MoreVertical, Eye, AlertCircle } from 'lucide-react'
 import type { WardrobeItem } from '../../core/types/wardrobe'
 import { useWardrobeStore } from '../../store/wardrobeStore'
 import Checkbox from '../ui/Checkbox'
 import Badge from '../ui/Badge'
 import SparkleEffect from '../effects/SparkleEffect'
 import ShimmerEffect from '../effects/ShimmerEffect'
+import ItemDetailModal from './ItemDetailModal'
 
 interface ItemCardProps {
   item: WardrobeItem
+  onEdit?: (item: WardrobeItem) => void
 }
 
-export default function ItemCard({ item }: ItemCardProps) {
-  const { toggleOwned, toggleWishlist, deleteItem } = useWardrobeStore()
+export default function ItemCard({ item, onEdit }: ItemCardProps) {
+  const { toggleOwned, deleteItem } = useWardrobeStore()
   const [isHovered, setIsHovered] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showDetail, setShowDetail] = useState(false)
   const [showSparkle, setShowSparkle] = useState(false)
   const [sparklePos, setSparklePos] = useState({ x: 0, y: 0 })
   const cardRef = useRef<HTMLDivElement>(null)
 
-  const handleToggleOwned = async (e?: React.MouseEvent) => {
+  const handleToggleOwned = async (e?: React.MouseEvent | React.TouchEvent) => {
     if (e) {
-      // Получаем позицию для эффекта
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
       setSparklePos({
         x: rect.left + rect.width / 2,
@@ -34,13 +37,34 @@ export default function ItemCard({ item }: ItemCardProps) {
     await toggleOwned(item.id)
   }
 
-  const handleToggleWishlist = async () => {
-    await toggleWishlist(item.id)
-  }
-
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
     await deleteItem(item.id)
   }
+
+  const handleEdit = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setShowMenu(false)
+    onEdit?.(item)
+  }
+
+  const handleShowDelete = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setShowDeleteConfirm(true)
+    setShowMenu(false)
+  }
+
+  const handleCancelDelete = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setShowDeleteConfirm(false)
+  }
+
+  // Проверяем, есть ли примечание (особые условия получения)
+  const hasSpecialCondition = item.notes && item.notes.trim().length > 0
 
   return (
     <>
@@ -61,9 +85,9 @@ export default function ItemCard({ item }: ItemCardProps) {
         onMouseLeave={() => {
           setIsHovered(false)
           setShowDeleteConfirm(false)
+          setShowMenu(false)
         }}
         whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
         className={`
           group relative romantic-card rounded-2xl overflow-hidden
           shadow-card hover:shadow-card-hover
@@ -72,98 +96,52 @@ export default function ItemCard({ item }: ItemCardProps) {
         `}
       >
         {/* Эффект мерцания для алмазных нарядов */}
-        {!item.isFree && <ShimmerEffect />}
+        {!item.isFree && !item.isOwned && <ShimmerEffect />}
 
         {/* Изображение */}
-        <div className="aspect-[3/4] bg-gradient-to-br from-romantic-pink/50 to-romantic-dark/5 
-                        flex items-center justify-center overflow-hidden relative">
+        <div 
+          className="relative w-full bg-gradient-to-br from-romantic-pink/50 to-romantic-dark/5 
+                      flex items-center justify-center overflow-hidden cursor-pointer"
+          onClick={() => setShowDetail(true)}
+        >
           {item.image ? (
-            <motion.img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-full object-cover"
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            />
+            <div className="w-full" style={{ maxHeight: '280px' }}>
+              <img
+                src={item.image}
+                alt={item.name}
+                className="w-full h-auto max-h-[280px] object-contain"
+              />
+            </div>
           ) : (
-            <motion.div
-              className="text-center p-4"
-              animate={{ y: [0, -5, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            >
+            <div className="py-8 text-center">
               <span className="text-5xl">
                 {item.category === 'dress' ? '👗' :
                  item.category === 'hairstyle' ? '💇‍♀️' :
                  item.category === 'accessory' ? '💍' : '💄'}
               </span>
-            </motion.div>
+            </div>
           )}
 
-          {/* Оверлей при наведении */}
+          {/* Кнопка просмотра */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: isHovered ? 1 : 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-gradient-to-t from-romantic-darker/60 via-romantic-darker/20 to-transparent 
-                       flex items-center justify-center gap-2"
+            className="absolute inset-0 bg-gradient-to-t from-romantic-darker/50 to-transparent 
+                       flex items-center justify-center"
           >
             <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleToggleWishlist}
-              className={`p-2 rounded-full backdrop-blur-sm transition-colors ${
-                item.isWishlist
-                  ? 'bg-romantic-crimson text-white'
-                  : 'bg-white/70 text-romantic-dark/60 hover:text-romantic-crimson'
-              }`}
-              title={item.isWishlist ? 'Убрать из избранного' : 'Хочу получить'}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowDetail(true)
+              }}
+              className="px-4 py-2 rounded-xl bg-white/90 text-romantic-dark font-nunito text-sm
+                         flex items-center gap-2 shadow-lg"
             >
-              <Heart size={18} fill={item.isWishlist ? 'white' : 'none'} />
+              <Eye size={16} />
+              Подробнее
             </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="p-2 rounded-full bg-white/70 text-romantic-dark/60 
-                         hover:text-romantic-gold backdrop-blur-sm transition-colors"
-              title="Редактировать"
-            >
-              <Edit3 size={18} />
-            </motion.button>
-            {!showDeleteConfirm ? (
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setShowDeleteConfirm(true)}
-                className="p-2 rounded-full bg-white/70 text-romantic-dark/60 
-                           hover:text-romantic-crimson backdrop-blur-sm transition-colors"
-                title="Удалить"
-              >
-                <Trash2 size={18} />
-              </motion.button>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex gap-1"
-              >
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleDelete}
-                  className="px-3 py-1.5 rounded-xl bg-romantic-crimson text-white text-xs font-bold"
-                >
-                  Удалить
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="px-3 py-1.5 rounded-xl bg-white/70 text-romantic-dark text-xs"
-                >
-                  Нет
-                </motion.button>
-              </motion.div>
-            )}
           </motion.div>
 
           {/* Бейдж "Есть" */}
@@ -171,7 +149,6 @@ export default function ItemCard({ item }: ItemCardProps) {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
               className="absolute top-2 left-2"
             >
               <Badge variant="gold" icon={<span>✅</span>}>
@@ -180,57 +157,129 @@ export default function ItemCard({ item }: ItemCardProps) {
             </motion.div>
           )}
 
-          {/* Бейдж "Хочу" */}
-          {item.isWishlist && !item.isOwned && (
+          {/* Бейдж с условиями получения */}
+          {!item.isOwned && hasSpecialCondition && (
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
               className="absolute top-2 left-2"
             >
-              <Badge variant="crimson" icon={<Heart size={12} />}>
-                Хочу
+              <Badge variant="crimson" icon={<AlertCircle size={12} />}>
+                Особые условия
               </Badge>
+            </motion.div>
+          )}
+
+          {/* Кнопка меню (всегда видна) */}
+          <div className="absolute top-2 right-2">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowMenu(!showMenu)
+                setShowDeleteConfirm(false)
+              }}
+              className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm 
+                         flex items-center justify-center
+                         text-romantic-dark/70 hover:bg-white transition-colors shadow-sm"
+            >
+              <MoreVertical size={16} />
+            </motion.button>
+          </div>
+
+          {/* Выпадающее меню */}
+          {showMenu && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, y: -5 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="absolute top-12 right-2 z-20 bg-white/95 backdrop-blur-sm 
+                         rounded-2xl shadow-lg border border-romantic-gold/20 overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowDetail(true)
+                  setShowMenu(false)
+                }}
+                className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
+                           text-romantic-dark/70 hover:bg-romantic-pink/30 transition-colors"
+              >
+                <Eye size={16} />
+                Подробнее
+              </button>
+              <button
+                onClick={handleEdit}
+                className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
+                           text-romantic-dark/70 hover:bg-romantic-pink/30 
+                           hover:text-romantic-gold transition-colors"
+              >
+                <Edit3 size={16} />
+                Редактировать
+              </button>
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={handleShowDelete}
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
+                             text-romantic-dark/70 hover:bg-red-50 
+                             hover:text-romantic-crimson transition-colors"
+                >
+                  <Trash2 size={16} />
+                  Удалить
+                </button>
+              ) : (
+                <div className="p-3 space-y-2">
+                  <p className="text-xs text-romantic-dark/70 font-nunito text-center">
+                    Удалить наряд?
+                  </p>
+                  <div className="flex gap-2 justify-center">
+                    <button
+                      onClick={handleDelete}
+                      className="px-3 py-1.5 rounded-lg bg-romantic-crimson text-white text-xs font-bold"
+                    >
+                      Да
+                    </button>
+                    <button
+                      onClick={handleCancelDelete}
+                      className="px-3 py-1.5 rounded-lg bg-romantic-pink/50 text-romantic-dark text-xs"
+                    >
+                      Нет
+                    </button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </div>
 
         {/* Информация */}
-        <div className="p-3 space-y-2 relative">
-          {/* Название */}
+        <div className="p-3 space-y-2">
           <h4 className="font-cormorant font-semibold text-romantic-dark text-sm leading-tight line-clamp-2">
             {item.name}
           </h4>
 
-          {/* Серия */}
           <p className="text-xs text-romantic-dark/50 font-nunito">
             С{item.season} С{item.episode}
           </p>
 
-          {/* Нижняя строка: тип и чекбокс */}
           <div className="flex items-center justify-between">
-            {/* Тип наряда */}
             {item.isFree ? (
               <Badge variant="free" icon={<span>🆓</span>}>
                 Бесплатно
               </Badge>
             ) : (
               <Badge variant="diamond" icon={<Diamond size={12} />}>
-                {item.diamondCost}
+                {item.diamondCost} 💎
               </Badge>
             )}
 
-            {/* Чекбокс владения с эффектом */}
-            <motion.div
-              whileTap={{ scale: 0.8 }}
-              animate={item.isOwned ? { scale: [1, 1.3, 1] } : {}}
-              transition={{ duration: 0.3 }}
-            >
+            {/* Галочка "У меня есть" */}
+            <div onClick={(e) => e.stopPropagation()}>
               <Checkbox
                 checked={item.isOwned}
                 onChange={() => handleToggleOwned()}
               />
-            </motion.div>
+            </div>
           </div>
         </div>
 
@@ -245,12 +294,15 @@ export default function ItemCard({ item }: ItemCardProps) {
         )}
       </motion.article>
 
-      {/* Эффект звёздочек при отметке */}
-      <SparkleEffect
-        isActive={showSparkle}
-        x={sparklePos.x}
-        y={sparklePos.y}
-        count={10}
+      {/* Эффект звёздочек */}
+      <SparkleEffect isActive={showSparkle} x={sparklePos.x} y={sparklePos.y} count={10} />
+
+      {/* Модальное окно с деталями наряда */}
+      <ItemDetailModal
+        isOpen={showDetail}
+        onClose={() => setShowDetail(false)}
+        item={item}
+        onToggleOwned={() => handleToggleOwned()}
       />
     </>
   )

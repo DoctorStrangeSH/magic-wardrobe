@@ -12,6 +12,8 @@ import type {
 } from '../core/types/wardrobe'
 import { wardrobeService } from '../core/services/wardrobeService'
 
+type FilterMode = 'all' | 'owned' | 'missing'
+
 /**
  * Состояние хранилища гардероба
  */
@@ -27,8 +29,7 @@ interface WardrobeState {
   isLoading: boolean
   error: string | null
   activeCategory: WardrobeCategory | 'all'
-  showOnlyOwned: boolean
-  showOnlyWishlist: boolean
+  filterMode: FilterMode
   searchQuery: string
 
   // ─── ДЕЙСТВИЯ: ИСТОРИИ ──────────────────────
@@ -55,8 +56,7 @@ interface WardrobeState {
 
   // ─── ДЕЙСТВИЯ: ФИЛЬТРЫ ──────────────────────
   setActiveCategory: (category: WardrobeCategory | 'all') => void
-  setShowOnlyOwned: (show: boolean) => void
-  setShowOnlyWishlist: (show: boolean) => void
+  setFilterMode: (mode: FilterMode) => void
   setSearchQuery: (query: string) => void
 
   // ─── ДЕЙСТВИЯ: ИМПОРТ/ЭКСПОРТ ───────────────
@@ -80,13 +80,11 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
   isLoading: false,
   error: null,
   activeCategory: 'all',
-  showOnlyOwned: false,
-  showOnlyWishlist: false,
+  filterMode: 'all',
   searchQuery: '',
 
   // ─── ДЕЙСТВИЯ: ИСТОРИИ ──────────────────────
 
-  /** Загрузить все истории */
   loadStories: async () => {
     set({ isLoading: true, error: null })
     try {
@@ -98,9 +96,8 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
     }
   },
 
-  /** Выбрать историю */
   selectStory: (storyId: string | null) => {
-    set({ selectedStoryId: storyId, activeCategory: 'all', showOnlyOwned: false, searchQuery: '' })
+    set({ selectedStoryId: storyId, activeCategory: 'all', filterMode: 'all', searchQuery: '' })
     if (storyId) {
       get().loadItems(storyId)
       get().loadStoryStats(storyId)
@@ -109,7 +106,6 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
     }
   },
 
-  /** Создать историю */
   createStory: async (input: CreateStoryInput) => {
     const story = await wardrobeService.createStory(input)
     await get().loadStories()
@@ -117,7 +113,6 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
     return story
   },
 
-  /** Обновить историю */
   updateStory: async (id: string, input: UpdateStoryInput) => {
     await wardrobeService.updateStory(id, input)
     await get().loadStories()
@@ -127,7 +122,6 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
     await get().loadOverallStats()
   },
 
-  /** Удалить историю */
   deleteStory: async (id: string) => {
     await wardrobeService.deleteStory(id)
     if (get().selectedStoryId === id) {
@@ -137,7 +131,6 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
     await get().loadOverallStats()
   },
 
-  /** Обновить список историй */
   refreshStories: async () => {
     await get().loadStories()
     await get().loadOverallStats()
@@ -145,7 +138,6 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
 
   // ─── ДЕЙСТВИЯ: ПРЕДМЕТЫ ─────────────────────
 
-  /** Загрузить предметы истории */
   loadItems: async (storyId: string) => {
     set({ isLoading: true, error: null })
     try {
@@ -157,44 +149,37 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
     }
   },
 
-  /** Создать предмет */
   createItem: async (input: CreateWardrobeItemInput) => {
     const item = await wardrobeService.createItem(input)
     await get().refreshItems()
     return item
   },
 
-  /** Обновить предмет */
   updateItem: async (id: string, input: UpdateWardrobeItemInput) => {
     await wardrobeService.updateItem(id, input)
     await get().refreshItems()
   },
 
-  /** Удалить предмет */
   deleteItem: async (id: string) => {
     await wardrobeService.deleteItem(id)
     await get().refreshItems()
   },
 
-  /** Переключить статус владения */
   toggleOwned: async (id: string) => {
     await wardrobeService.toggleOwned(id)
     await get().refreshItems()
   },
 
-  /** Переключить статус избранного */
   toggleWishlist: async (id: string) => {
     await wardrobeService.toggleWishlist(id)
     await get().refreshItems()
   },
 
-  /** Отметить серию как полученную */
   markSeriesAsOwned: async (storyId: string, season: number, episode: number) => {
     await wardrobeService.markSeriesAsOwned(storyId, season, episode)
     await get().refreshItems()
   },
 
-  /** Обновить предметы и статистику */
   refreshItems: async () => {
     const { selectedStoryId } = get()
     if (selectedStoryId) {
@@ -206,7 +191,6 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
 
   // ─── ДЕЙСТВИЯ: СТАТИСТИКА ───────────────────
 
-  /** Загрузить общую статистику */
   loadOverallStats: async () => {
     try {
       const stats = await wardrobeService.getOverallStats()
@@ -216,7 +200,6 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
     }
   },
 
-  /** Загрузить статистику истории */
   loadStoryStats: async (storyId: string) => {
     try {
       const stats = await wardrobeService.getStoryStats(storyId)
@@ -232,18 +215,8 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
     set({ activeCategory: category })
   },
 
-  setShowOnlyOwned: (show: boolean) => {
-    set({ showOnlyOwned: show })
-    if (show) {
-      set({ showOnlyWishlist: false })
-    }
-  },
-
-  setShowOnlyWishlist: (show: boolean) => {
-    set({ showOnlyWishlist: show })
-    if (show) {
-      set({ showOnlyOwned: false })
-    }
+  setFilterMode: (mode: FilterMode) => {
+    set({ filterMode: mode })
   },
 
   setSearchQuery: (query: string) => {
@@ -265,9 +238,8 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
 
   // ─── ВЫЧИСЛЯЕМЫЕ ЗНАЧЕНИЯ ──────────────────
 
-  /** Получить отфильтрованные предметы */
   getFilteredItems: () => {
-    const { currentItems, activeCategory, showOnlyOwned, showOnlyWishlist, searchQuery } = get()
+    const { currentItems, activeCategory, filterMode, searchQuery } = get()
     
     let filtered = [...currentItems]
 
@@ -276,14 +248,11 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
       filtered = filtered.filter(item => item.category === activeCategory)
     }
 
-    // Фильтр "только имеющиеся"
-    if (showOnlyOwned) {
+    // Фильтр: все / есть / нет
+    if (filterMode === 'owned') {
       filtered = filtered.filter(item => item.isOwned)
-    }
-
-    // Фильтр "хочу получить"
-    if (showOnlyWishlist) {
-      filtered = filtered.filter(item => item.isWishlist)
+    } else if (filterMode === 'missing') {
+      filtered = filtered.filter(item => !item.isOwned)
     }
 
     // Поиск по названию

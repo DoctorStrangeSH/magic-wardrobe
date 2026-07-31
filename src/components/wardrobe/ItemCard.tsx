@@ -73,7 +73,6 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
   }
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Не открываем детали, если клик был по кнопкам, меню или чекбоксу
     const target = e.target as HTMLElement
     if (
       target.closest('button') || 
@@ -141,23 +140,6 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
               </span>
             </div>
           )}
-
-          {/* Плашка "Не получено" */}
-          <AnimatePresence>
-            {!item.isOwned && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="absolute inset-0 flex items-center justify-center pointer-events-none"
-              >
-                <div className="px-4 py-2 rounded-full bg-romantic-darker/70 text-white/90 text-xs font-nunito font-medium backdrop-blur-sm">
-                  🔒 Не получено
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Кнопка просмотра (десктоп) */}
           <motion.div
@@ -282,7 +264,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
           </h4>
 
           <p className="text-xs text-romantic-dark/50 font-nunito">
-            С{item.season} С{item.episode}
+            Сезон {item.season}, Серия {item.episode}
           </p>
 
           <div className="flex items-center justify-between">

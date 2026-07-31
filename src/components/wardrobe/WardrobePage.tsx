@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Plus, Sparkles, Filter, Search } from 'lucide-react'
+import { ArrowLeft, Plus, Sparkles, Search } from 'lucide-react'
 import { useWardrobeStore } from '../../store/wardrobeStore'
 import CategoryTabs from './CategoryTabs'
 import ItemGrid from './ItemGrid'
@@ -10,6 +10,8 @@ import AddItemModal from '../forms/AddItemModal'
 import EditItemModal from '../forms/EditItemModal'
 import Button from '../ui/Button'
 import type { WardrobeCategory, WardrobeItem } from '../../core/types/wardrobe'
+
+type FilterMode = 'all' | 'owned' | 'missing'
 
 export default function WardrobePage() {
   const { storyId } = useParams<{ storyId: string }>()
@@ -21,21 +23,18 @@ export default function WardrobePage() {
     storyStats,
     isLoading,
     activeCategory,
-    showOnlyOwned,
-    showOnlyWishlist,
     searchQuery,
+    filterMode,
     loadStories,
     selectStory,
     setActiveCategory,
-    setShowOnlyOwned,
-    setShowOnlyWishlist,
     setSearchQuery,
+    setFilterMode,
     getFilteredItems,
   } = useWardrobeStore()
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<WardrobeItem | null>(null)
-  const [showFilters, setShowFilters] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
 
   // Загружаем данные при монтировании и при смене storyId
@@ -119,7 +118,7 @@ export default function WardrobePage() {
               {currentStory?.title}
             </h1>
             <p className="text-sm text-romantic-dark/50 font-nunito">
-              {currentStory?.totalSeasons} сез. • Сейчас: С{currentStory?.currentSeason} С{currentStory?.currentEpisode}
+              {currentStory?.totalSeasons} сез. • Сейчас: Сезон {currentStory?.currentSeason}, Серия {currentStory?.currentEpisode}
             </p>
           </div>
         </div>
@@ -164,9 +163,10 @@ export default function WardrobePage() {
         </div>
       )}
 
-      {/* Фильтры */}
+      {/* Фильтры и поиск */}
       <div className="space-y-3">
-        <div className="flex items-center gap-3 flex-wrap">
+        {/* Строка с категориями и фильтрами */}
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="flex-1 min-w-0">
             <CategoryTabs
               activeCategory={activeCategory}
@@ -174,44 +174,47 @@ export default function WardrobePage() {
               counts={categoryCounts}
             />
           </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`p-2 rounded-xl transition-colors ${
-              showFilters || showOnlyOwned || showOnlyWishlist
-                ? 'bg-romantic-gold/20 text-romantic-gold'
-                : 'text-romantic-dark/50 hover:text-romantic-dark hover:bg-romantic-pink/50'
-            }`}
-          >
-            <Filter size={20} />
-          </button>
+          
+          {/* Кнопки фильтрации: Все / Есть / Нет */}
+          <div className="flex items-center gap-1 bg-romantic-pink/30 rounded-2xl p-1">
+            {([
+              { value: 'all' as FilterMode, label: 'Все', icon: '👗' },
+              { value: 'owned' as FilterMode, label: 'Есть', icon: '✅' },
+              { value: 'missing' as FilterMode, label: 'Нет', icon: '🔒' },
+            ]).map((btn) => (
+              <button
+                key={btn.value}
+                onClick={() => setFilterMode(btn.value)}
+                className={`
+                  flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-nunito font-medium
+                  transition-all duration-200 whitespace-nowrap
+                  ${filterMode === btn.value
+                    ? 'bg-white text-romantic-dark shadow-sm'
+                    : 'text-romantic-dark/50 hover:text-romantic-dark'
+                  }
+                `}
+              >
+                <span>{btn.icon}</span>
+                <span className="hidden sm:inline">{btn.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {showFilters && (
-          <div className="flex items-center gap-4 flex-wrap p-4 romantic-card rounded-2xl">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-romantic-dark/30" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Поиск по названию..."
-                className="w-full pl-9 pr-4 py-2 rounded-xl border border-romantic-gold/20 
-                           bg-white/70 text-sm text-romantic-dark font-nunito text-base
-                           placeholder:text-romantic-dark/30
-                           focus:outline-none focus:border-romantic-gold focus:ring-2 focus:ring-romantic-gold/20"
-              />
-            </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showOnlyOwned}
-                onChange={(e) => setShowOnlyOwned(e.target.checked)}
-                className="w-4 h-4 rounded border-romantic-gold/40 checked:bg-romantic-gold"
-              />
-              <span className="text-sm text-romantic-dark/70 font-nunito">✅ Только имеющиеся</span>
-            </label>
-          </div>
-        )}
+        {/* Поиск */}
+        <div className="relative">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-romantic-dark/30" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Поиск по названию..."
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-romantic-gold/20 
+                       bg-white/70 text-sm text-romantic-dark font-nunito text-base
+                       placeholder:text-romantic-dark/30
+                       focus:outline-none focus:border-romantic-gold focus:ring-2 focus:ring-romantic-gold/20"
+          />
+        </div>
       </div>
 
       {/* Сетка нарядов */}

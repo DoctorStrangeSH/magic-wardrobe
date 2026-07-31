@@ -8,6 +8,7 @@ import ProgressBar from './ProgressBar'
 import AddItemModal from '../forms/AddItemModal'
 import Button from '../ui/Button'
 import type { WardrobeCategory } from '../../core/types/wardrobe'
+import { motion } from 'framer-motion'
 
 export default function WardrobePage() {
   const { storyId } = useParams<{ storyId: string }>()
@@ -22,6 +23,7 @@ export default function WardrobePage() {
     showOnlyOwned,
     showOnlyWishlist,
     searchQuery,
+    loadStories,
     selectStory,
     setActiveCategory,
     setShowOnlyOwned,
@@ -32,13 +34,21 @@ export default function WardrobePage() {
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
-  // Загружаем данные при монтировании
+  // Загружаем данные при монтировании и при смене storyId
   useEffect(() => {
-    if (storyId) {
-      selectStory(storyId)
+    const init = async () => {
+      if (stories.length === 0) {
+        await loadStories()
+      }
+      if (storyId) {
+        selectStory(storyId)
+      }
+      setIsInitialized(true)
     }
-  }, [storyId, selectStory])
+    init()
+  }, [storyId])
 
   // Находим текущую историю
   const currentStory = useMemo(
@@ -46,10 +56,8 @@ export default function WardrobePage() {
     [stories, storyId]
   )
 
-  // Получаем отфильтрованные предметы
   const filteredItems = getFilteredItems()
 
-  // Подсчёт количества по категориям
   const categoryCounts = useMemo(() => {
     const counts: Record<WardrobeCategory | 'all', number> = {
       all: currentItems.length,
@@ -64,8 +72,22 @@ export default function WardrobePage() {
     return counts
   }, [currentItems])
 
-  // Если история не найдена
-  if (!currentStory) {
+  // Показываем загрузку, пока инициализируемся
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+        >
+          <Sparkles size={48} className="text-romantic-gold/50" />
+        </motion.div>
+      </div>
+    )
+  }
+
+  // Если история не найдена после загрузки
+  if (!currentStory && isInitialized) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Sparkles size={48} className="text-romantic-gold/30 mb-4" />
@@ -82,7 +104,6 @@ export default function WardrobePage() {
       {/* Шапка */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
-          {/* Кнопка назад */}
           <button
             onClick={() => navigate('/')}
             className="p-2 rounded-xl text-romantic-gold/60 hover:text-romantic-gold 
@@ -91,22 +112,17 @@ export default function WardrobePage() {
             <ArrowLeft size={22} />
           </button>
 
-          {/* Инфо об истории */}
           <div>
             <h1 className="font-cormorant text-2xl font-bold text-romantic-dark">
-              {currentStory.title}
+              {currentStory?.title}
             </h1>
             <p className="text-sm text-romantic-dark/50 font-nunito">
-              {currentStory.totalSeasons} сез. • Сейчас: С{currentStory.currentSeason} С{currentStory.currentEpisode}
+              {currentStory?.totalSeasons} сез. • Сейчас: С{currentStory?.currentSeason} С{currentStory?.currentEpisode}
             </p>
           </div>
         </div>
 
-        {/* Кнопка добавления наряда */}
-        <Button
-          onClick={() => setIsAddModalOpen(true)}
-          icon={<Plus size={18} />}
-        >
+        <Button onClick={() => setIsAddModalOpen(true)} icon={<Plus size={18} />}>
           Добавить наряд
         </Button>
       </div>
@@ -114,38 +130,30 @@ export default function WardrobePage() {
       {/* Прогресс-бар */}
       {storyStats && (
         <div className="romantic-card rounded-2xl p-5 shadow-card space-y-4">
-          <ProgressBar
-            value={storyStats.percentage}
-            label="Прогресс гардероба"
-            size="lg"
-          />
+          <ProgressBar value={storyStats.percentage} label="Прогресс гардероба" size="lg" />
 
-          {/* Мини-статистика по категориям */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {(['dress', 'hairstyle', 'accessory', 'makeup'] as WardrobeCategory[]).map(
-              (cat) => {
-                const catStats = storyStats.byCategory[cat]
-                return (
-                  <div key={cat} className="text-center">
-                    <div className="text-xs text-romantic-dark/50 font-nunito mb-1">
-                      {cat === 'dress' ? '👗' : cat === 'hairstyle' ? '💇‍♀️' : cat === 'accessory' ? '💍' : '💄'}
-                    </div>
-                    <div className="text-sm font-nunito font-bold text-romantic-dark">
-                      {catStats.owned}/{catStats.total}
-                    </div>
-                    <ProgressBar
-                      value={catStats.percentage}
-                      size="sm"
-                      showPercentage={false}
-                      color={catStats.percentage === 100 ? 'emerald' : 'gold'}
-                    />
+            {(['dress', 'hairstyle', 'accessory', 'makeup'] as WardrobeCategory[]).map((cat) => {
+              const catStats = storyStats.byCategory[cat]
+              return (
+                <div key={cat} className="text-center">
+                  <div className="text-xs text-romantic-dark/50 font-nunito mb-1">
+                    {cat === 'dress' ? '👗' : cat === 'hairstyle' ? '💇‍♀️' : cat === 'accessory' ? '💍' : '💄'}
                   </div>
-                )
-              }
-            )}
+                  <div className="text-sm font-nunito font-bold text-romantic-dark">
+                    {catStats.owned}/{catStats.total}
+                  </div>
+                  <ProgressBar
+                    value={catStats.percentage}
+                    size="sm"
+                    showPercentage={false}
+                    color={catStats.percentage === 100 ? 'emerald' : 'gold'}
+                  />
+                </div>
+              )
+            })}
           </div>
 
-          {/* Потрачено алмазов */}
           {storyStats.totalDiamondsSpent > 0 && (
             <p className="text-xs text-romantic-dark/50 font-nunito text-center">
               💎 Потрачено алмазов: <span className="font-bold text-romantic-crimson">{storyStats.totalDiamondsSpent}</span>
@@ -154,10 +162,9 @@ export default function WardrobePage() {
         </div>
       )}
 
-      {/* Фильтры и поиск */}
+      {/* Фильтры */}
       <div className="space-y-3">
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Категории */}
           <div className="flex-1 min-w-0">
             <CategoryTabs
               activeCategory={activeCategory}
@@ -165,8 +172,6 @@ export default function WardrobePage() {
               counts={categoryCounts}
             />
           </div>
-
-          {/* Кнопка фильтров */}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`p-2 rounded-xl transition-colors ${
@@ -179,10 +184,8 @@ export default function WardrobePage() {
           </button>
         </div>
 
-        {/* Расширенные фильтры */}
         {showFilters && (
           <div className="flex items-center gap-4 flex-wrap p-4 romantic-card rounded-2xl">
-            {/* Поиск */}
             <div className="relative flex-1 min-w-[200px]">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-romantic-dark/30" />
               <input
@@ -191,13 +194,11 @@ export default function WardrobePage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Поиск по названию..."
                 className="w-full pl-9 pr-4 py-2 rounded-xl border border-romantic-gold/20 
-                           bg-white/70 text-sm text-romantic-dark font-nunito
+                           bg-white/70 text-sm text-romantic-dark font-nunito text-base
                            placeholder:text-romantic-dark/30
                            focus:outline-none focus:border-romantic-gold focus:ring-2 focus:ring-romantic-gold/20"
               />
             </div>
-
-            {/* Фильтры-переключатели */}
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -206,16 +207,6 @@ export default function WardrobePage() {
                 className="w-4 h-4 rounded border-romantic-gold/40 checked:bg-romantic-gold"
               />
               <span className="text-sm text-romantic-dark/70 font-nunito">✅ Только имеющиеся</span>
-            </label>
-
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showOnlyWishlist}
-                onChange={(e) => setShowOnlyWishlist(e.target.checked)}
-                className="w-4 h-4 rounded border-romantic-gold/40 checked:bg-romantic-crimson"
-              />
-              <span className="text-sm text-romantic-dark/70 font-nunito">❤️ Хочу получить</span>
             </label>
           </div>
         )}

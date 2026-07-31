@@ -93,3 +93,15 @@
     display: none;
   }
 }
+
+/* Безопасная зона для мобильных (iPhone с чёлкой) */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 8px);
+}
+
+/* Отступ для контента с нижней навигацией на мобильных */
+@media (max-width: 1023px) {
+  main {
+    padding-bottom: 80px !important;
+  }
+}

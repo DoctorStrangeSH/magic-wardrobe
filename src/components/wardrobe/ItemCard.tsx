@@ -109,11 +109,15 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
               <img
                 src={item.image}
                 alt={item.name}
-                className="w-full h-auto max-h-[280px] object-contain"
+                className={`w-full h-auto max-h-[280px] object-contain transition-all duration-500 ${
+                  !item.isOwned ? 'grayscale opacity-60' : ''
+                }`}
               />
             </div>
           ) : (
-            <div className="py-8 text-center">
+            <div className={`py-8 text-center transition-all duration-500 ${
+              !item.isOwned ? 'grayscale opacity-60' : ''
+            }`}>
               <span className="text-5xl">
                 {item.category === 'dress' ? '👗' :
                  item.category === 'hairstyle' ? '💇‍♀️' :
@@ -122,12 +126,25 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
             </div>
           )}
 
-          {/* Кнопка просмотра */}
+          {/* Плашка "Не получено" */}
+          {!item.isOwned && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <motion.div
+                animate={{ opacity: [0.3, 0.5, 0.3] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="px-4 py-2 rounded-full bg-romantic-darker/70 text-white/80 text-xs font-nunito"
+              >
+                🔒 Не получено
+              </motion.div>
+            </div>
+          )}
+
+          {/* Кнопка просмотра (при наведении) */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: isHovered ? 1 : 0 }}
             className="absolute inset-0 bg-gradient-to-t from-romantic-darker/50 to-transparent 
-                       flex items-center justify-center"
+                       hidden sm:flex items-center justify-center"
           >
             <motion.button
               whileHover={{ scale: 1.05 }}

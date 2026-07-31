@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(135deg, #fdf2f2 0%, #f8e8e8 30%, #fdf2f2 60%, #f0dcdc 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: #2d1b4e;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Стилизованный скроллбар */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f8e8e8;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #d4a574;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #c41e3a;
+  }
+}
+
+@layer components {
+  /* Декоративная линия с золотым градиентом */
+  .golden-divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #d4a574, #e8d5b7, #d4a574, transparent);
+    border: none;
+  }
+
+  /* Золотое свечение для акцентных элементов */
+  .golden-glow {
+    box-shadow: 0 0 15px rgba(212, 167, 116, 0.3), 0 0 30px rgba(212, 167, 116, 0.1);
+  }
+
+  /* Романтический градиент для карточек */
+  .romantic-card {
+    background: linear-gradient(145deg, #ffffff 0%, #fdf2f2 50%, #f8e8e8 100%);
+  }
+
+  /* Магический фон */
+  .magic-bg {
+    background: 
+      radial-gradient(ellipse at 20% 50%, rgba(212, 167, 116, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(196, 30, 58, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(45, 27, 78, 0.05) 0%, transparent 50%);
+  }
+}

@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Plus, Sparkles, Search } from 'lucide-react'
+import { ArrowLeft, Plus, Sparkles, Search, Zap, FileText } from 'lucide-react'
 import { useWardrobeStore } from '../../store/wardrobeStore'
 import CategoryTabs from './CategoryTabs'
 import ItemGrid from './ItemGrid'
 import ProgressBar from './ProgressBar'
 import AddItemModal from '../forms/AddItemModal'
 import EditItemModal from '../forms/EditItemModal'
+import BulkImportModal from '../forms/BulkImportModal'
 import Button from '../ui/Button'
 import type { WardrobeCategory, WardrobeItem } from '../../core/types/wardrobe'
 
@@ -34,6 +35,8 @@ export default function WardrobePage() {
   } = useWardrobeStore()
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [quickAddMode, setQuickAddMode] = useState(false)
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<WardrobeItem | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
 
@@ -123,9 +126,38 @@ export default function WardrobePage() {
           </div>
         </div>
 
-        <Button onClick={() => setIsAddModalOpen(true)} icon={<Plus size={18} />}>
-          Добавить наряд
-        </Button>
+        {/* Кнопки добавления */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button 
+            onClick={() => {
+              setQuickAddMode(false)
+              setIsAddModalOpen(true)
+            }} 
+            icon={<Plus size={18} />}
+            size="sm"
+          >
+            Добавить
+          </Button>
+          <Button 
+            onClick={() => {
+              setQuickAddMode(true)
+              setIsAddModalOpen(true)
+            }} 
+            icon={<Zap size={18} />} 
+            variant="secondary"
+            size="sm"
+          >
+            Быстрое
+          </Button>
+          <Button 
+            onClick={() => setIsBulkImportOpen(true)} 
+            icon={<FileText size={18} />} 
+            variant="ghost"
+            size="sm"
+          >
+            Импорт
+          </Button>
+        </div>
       </div>
 
       {/* Прогресс-бар */}
@@ -228,8 +260,12 @@ export default function WardrobePage() {
       {storyId && (
         <AddItemModal
           isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
+          onClose={() => {
+            setIsAddModalOpen(false)
+            setQuickAddMode(false)
+          }}
           storyId={storyId}
+          quickMode={quickAddMode}
         />
       )}
 
@@ -239,6 +275,15 @@ export default function WardrobePage() {
         onClose={() => setEditingItem(null)}
         item={editingItem}
       />
+
+      {/* Модалка массового импорта */}
+      {storyId && (
+        <BulkImportModal
+          isOpen={isBulkImportOpen}
+          onClose={() => setIsBulkImportOpen(false)}
+          storyId={storyId}
+        />
+      )}
     </div>
   )
 }

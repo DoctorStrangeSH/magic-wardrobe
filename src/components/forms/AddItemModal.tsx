@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import ImageUpload from '../ui/ImageUpload'
 import { useWardrobeStore } from '../../store/wardrobeStore'
-import { Sparkles, Diamond } from 'lucide-react'
+import { Sparkles, Diamond, Zap, CheckCircle } from 'lucide-react'
 import type { WardrobeCategory } from '../../core/types/wardrobe'
 import { CATEGORY_LABELS, CATEGORY_ICONS } from '../../core/types/wardrobe'
 
@@ -11,11 +11,11 @@ interface AddItemModalProps {
   isOpen: boolean
   onClose: () => void
   storyId: string
+  quickMode?: boolean // Режим быстрого добавления
 }
 
 const CATEGORIES: WardrobeCategory[] = ['dress', 'hairstyle', 'accessory', 'makeup']
 
-// Стиль для числовых полей (мобильная совместимость)
 const numberInputClass = `
   w-full px-4 py-2.5 rounded-xl border border-romantic-gold/30 
   bg-white/70 text-romantic-dark font-nunito text-base
@@ -24,7 +24,7 @@ const numberInputClass = `
   transition-all
 `
 
-export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalProps) {
+export default function AddItemModal({ isOpen, onClose, storyId, quickMode = false }: AddItemModalProps) {
   const createItem = useWardrobeStore((state) => state.createItem)
 
   const [name, setName] = useState('')
@@ -39,13 +39,60 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [addedCount, setAddedCount] = useState(0)
+  const [showSuccess, setShowSuccess] = useState(false)
+  
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Фокус на поле названия при открытии
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        nameInputRef.current?.focus()
+      }, 100)
+    }
+  }, [isOpen])
+
+  // Сброс счётчика при закрытии
+  useEffect(() => {
+    if (!isOpen) {
+      setAddedCount(0)
+      setShowSuccess(false)
+    }
+  }, [isOpen])
+
+  // Обработчик колёсика мыши — предотвращает изменение чисел
+  const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+    e.currentTarget.blur()
+  }
+
+  const resetForm = (keepBase: boolean) => {
+    setName('')
+    setImage(null)
+    setError('')
+    setShowSuccess(false)
+    
+    if (!keepBase) {
+      // Полный сброс
+      setCategory('dress')
+      setSeason(1)
+      setEpisode(1)
+      setIsFree(true)
+      setDiamondCost(0)
+      setIsOwned(false)
+      setIsWishlist(false)
+      setNotes('')
+    }
+    // При keepBase=true сохраняем категорию, сезон, серию, тип, стоимость, статус, примечание
+  }
+
+  const handleSubmit = async (e: React.FormEvent, closeAfter: boolean = false) => {
     e.preventDefault()
     setError('')
 
     if (!name.trim()) {
       setError('Название наряда обязательно')
+      nameInputRef.current?.focus()
       return
     }
 
@@ -70,18 +117,17 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
         notes: notes.trim(),
       })
 
-      // Сброс формы
-      setName('')
-      setCategory('dress')
-      setImage(null)
-      setSeason(1)
-      setEpisode(1)
-      setIsFree(true)
-      setDiamondCost(0)
-      setIsOwned(false)
-      setIsWishlist(false)
-      setNotes('')
-      onClose()
+      if (closeAfter || !quickMode) {
+        // Закрываем модалку
+        resetForm(false)
+        onClose()
+      } else {
+        // Быстрый режим: сбрасываем название и фото, остальное оставляем
+        setAddedCount(prev => prev + 1)
+        setShowSuccess(true)
+        setTimeout(() => setShowSuccess(false), 1500)
+        resetForm(true)
+      }
     } catch (err) {
       setError('Ошибка при добавлении наряда')
       console.error(err)
@@ -90,9 +136,38 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
     }
   }
 
+  // Горячие клавиши
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.ctrlKey && e.key === 'Enter') {
+      // Ctrl+Enter — сохранить и закрыть
+      handleSubmit(e, true)
+    } else if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) {
+      // Enter — сохранить и продолжить (в быстром режиме)
+      if (quickMode) {
+        e.preventDefault()
+        handleSubmit(e, false)
+      }
+    }
+  }
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Добавить наряд" size="md">
-      <form onSubmit={handleSubmit} className="space-y-5">
+    <Modal isOpen={isOpen} onClose={onClose} title={quickMode ? '⚡ Быстрое добавление' : 'Добавить наряд'} size="md">
+      <form onSubmit={(e) => handleSubmit(e, !quickMode)} onKeyDown={handleKeyDown} className="space-y-5">
+        {/* Счётчик в быстром режиме */}
+        {quickMode && addedCount > 0 && (
+          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 font-nunito text-sm">
+            <CheckCircle size={16} />
+            Добавлено нарядов: <span className="font-bold">{addedCount}</span>
+          </div>
+        )}
+
+        {/* Успешное добавление */}
+        {showSuccess && (
+          <div className="text-center text-emerald-600 font-nunito text-sm animate-pulse">
+            ✅ Добавлено! Продолжай...
+          </div>
+        )}
+
         {/* Изображение */}
         <div>
           <label className="block text-sm font-nunito font-medium text-romantic-dark mb-1.5">
@@ -111,6 +186,7 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
             Название наряда *
           </label>
           <input
+            ref={nameInputRef}
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -120,7 +196,6 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
                        placeholder:text-romantic-dark/30
                        focus:outline-none focus:border-romantic-gold focus:ring-2 focus:ring-romantic-gold/20
                        transition-all"
-            autoFocus
           />
         </div>
 
@@ -164,6 +239,7 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
               min={1}
               value={season}
               onChange={(e) => setSeason(Math.max(1, parseInt(e.target.value) || 1))}
+              onWheel={handleWheel}
               className={numberInputClass}
             />
           </div>
@@ -178,6 +254,7 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
               min={1}
               value={episode}
               onChange={(e) => setEpisode(Math.max(1, parseInt(e.target.value) || 1))}
+              onWheel={handleWheel}
               className={numberInputClass}
             />
           </div>
@@ -233,6 +310,7 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
                 min={1}
                 value={diamondCost || ''}
                 onChange={(e) => setDiamondCost(Math.max(0, parseInt(e.target.value) || 0))}
+                onWheel={handleWheel}
                 placeholder="Например: 30"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-blue-300 
                            bg-white/70 text-romantic-dark font-nunito text-base
@@ -277,12 +355,12 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
         {/* Заметки */}
         <div>
           <label className="block text-sm font-nunito font-medium text-romantic-dark mb-1.5">
-            Заметки
+            Примечание (особые условия получения)
           </label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Описание наряда, впечатления..."
+            placeholder="Опиши, как получить этот наряд..."
             rows={2}
             className="w-full px-4 py-2.5 rounded-xl border border-romantic-gold/30 
                        bg-white/70 text-romantic-dark font-nunito text-base resize-none
@@ -300,14 +378,42 @@ export default function AddItemModal({ isOpen, onClose, storyId }: AddItemModalP
           </p>
         )}
 
+        {/* Горячие клавиши (подсказка) */}
+        {quickMode && (
+          <p className="text-xs text-romantic-dark/30 font-nunito text-center">
+            ⌨️ <kbd className="px-1.5 py-0.5 rounded bg-romantic-pink/50">Enter</kbd> — добавить и продолжить • 
+            <kbd className="px-1.5 py-0.5 rounded bg-romantic-pink/50 ml-1">Ctrl+Enter</kbd> — добавить и закрыть
+          </p>
+        )}
+
         {/* Кнопки */}
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="ghost" onClick={onClose} type="button">
-            Отмена
+            {quickMode ? 'Готово' : 'Отмена'}
           </Button>
-          <Button type="submit" isLoading={isSubmitting} icon={<Sparkles size={18} />}>
-            Добавить наряд
-          </Button>
+          {quickMode ? (
+            <>
+              <Button 
+                type="button" 
+                onClick={(e) => handleSubmit(e, false)}
+                isLoading={isSubmitting} 
+                icon={<Zap size={18} />}
+              >
+                Добавить и продолжить
+              </Button>
+              <Button 
+                type="submit"
+                variant="secondary"
+                icon={<CheckCircle size={18} />}
+              >
+                Готово
+              </Button>
+            </>
+          ) : (
+            <Button type="submit" isLoading={isSubmitting} icon={<Sparkles size={18} />}>
+              Добавить наряд
+            </Button>
+          )}
         </div>
       </form>
     </Modal>

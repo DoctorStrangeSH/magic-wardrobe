@@ -211,7 +211,6 @@ const CATEGORY_MAP: Record<string, WardrobeCategory> = {
   'монокль': 'accessory',
   'лорнет': 'accessory',
   'пенсне': 'accessory',
-  'ожерелье': 'accessory',
   
   // Русские: макияж
   'макияж': 'makeup',

@@ -15,32 +15,70 @@ interface BulkImportModalProps {
  * Формат строки импорта:
  * Название | категория | сезон | серия | тип | стоимость | примечание
  * 
- * Категории: dress, hairstyle, accessory, makeup
- * Тип: free или diamond
- * Стоимость: число (только для diamond)
+ * Категории (русские и английские):
+ *   dress, платье, костюм, наряд, одежда
+ *   hairstyle, причёска, прическа, волосы, стрижка
+ *   accessory, аксессуар, украшение, аксессуары
+ *   makeup, макияж
+ * 
+ * Тип (русские и английские):
+ *   free, бесплатно, бесплатный, бесплатное
+ *   diamond, алмазы, алмаз, платный, платно
+ * 
+ * Стоимость: число (только для diamond/платный)
+ *   Для free можно оставить пустым или пропустить
+ * 
  * Примечание: опционально
  * 
- * Пример:
- * Плащ тайны | dress | 2 | 5 | diamond | 30 | Нужен выбор с Джоном
- * Корона королевы | accessory | 2 | 5 | free
- * Вечернее платье | dress | 3 | 1 | diamond | 50
+ * Примеры:
+ *   Плащ тайны | dress | 2 | 5 | diamond | 30 | Нужен выбор с Джоном
+ *   Корона | аксессуар | 2 | 5 | бесплатно
+ *   Grave | dress | 3 | 12 | free | | Добавляется автоматически при покупке всех нарядов за 49💎
+ *   Причёска "Волна" | волосы | 1 | 2 | бесплатно
+ *   Макияж "Звезда" | makeup | 4 | 7 | diamond | 20
  */
 
 const CATEGORY_MAP: Record<string, WardrobeCategory> = {
+  // Английские
   'dress': 'dress',
+  'hairstyle': 'hairstyle',
+  'accessory': 'accessory',
+  'makeup': 'makeup',
+  // Русские: платья/костюмы
   'платье': 'dress',
   'костюм': 'dress',
   'наряд': 'dress',
-  'hairstyle': 'hairstyle',
+  'одежда': 'dress',
+  // Русские: причёски
   'причёска': 'hairstyle',
   'прическа': 'hairstyle',
   'волосы': 'hairstyle',
-  'accessory': 'accessory',
+  'стрижка': 'hairstyle',
+  // Русские: аксессуары
   'аксессуар': 'accessory',
   'украшение': 'accessory',
-  'makeup': 'makeup',
+  'аксессуары': 'accessory',
+  'серьги': 'accessory',
+  'колье': 'accessory',
+  'кольцо': 'accessory',
+  'браслет': 'accessory',
+  'очки': 'accessory',
+  'сумка': 'accessory',
+  'пояс': 'accessory',
+  'ремень': 'accessory',
+  'шарф': 'accessory',
+  'перчатки': 'accessory',
+  'веер': 'accessory',
+  'корона': 'accessory',
+  'диадема': 'accessory',
+  'крылья': 'accessory',
+  'маска': 'accessory',
+  // Русские: макияж
   'макияж': 'makeup',
 }
+
+const FREE_WORDS = ['free', 'бесплатно', 'бесплатный', 'бесплатное', 'бесплатные']
+const DIAMOND_WORDS = ['diamond', 'алмазы', 'алмаз', 'платный', 'платно', 'платное', 'платные']
 
 export default function BulkImportModal({ isOpen, onClose, storyId }: BulkImportModalProps) {
   const createItem = useWardrobeStore((state) => state.createItem)
@@ -66,11 +104,11 @@ export default function BulkImportModal({ isOpen, onClose, storyId }: BulkImport
         const parts = line.split('|').map(p => p.trim())
         
         if (parts.length < 5) {
-          errors.push(`Строка ${i + 1}: неверный формат (минимум 5 полей)`)
+          errors.push(`Строка ${i + 1}: неверный формат (минимум 5 полей: название | категория | сезон | серия | тип)`)
           continue
         }
 
-        const [name, categoryRaw, seasonStr, episodeStr, typeRaw, costStr, ...notesArr] = parts
+        const [name, categoryRaw, seasonStr, episodeStr, typeRaw, ...rest] = parts
         
         // Категория
         const categoryKey = categoryRaw.toLowerCase()
@@ -82,11 +120,39 @@ export default function BulkImportModal({ isOpen, onClose, storyId }: BulkImport
         
         // Тип
         const typeLower = typeRaw.toLowerCase()
-        const isFree = typeLower === 'free' || typeLower === 'бесплатно' || typeLower === 'бесплатный'
-        const diamondCost = isFree ? 0 : (parseInt(costStr) || 0)
+        const isFree = FREE_WORDS.includes(typeLower)
         
-        // Примечание
-        const notes = notesArr.join('|').trim()
+        let diamondCost = 0
+        let notes = ''
+
+        if (rest.length > 0) {
+          if (isFree) {
+            // Бесплатный наряд: всё после типа — примечание
+            // Если первый элемент пустой или "0" — пропускаем его
+            const filteredRest = rest.filter(r => r !== '' && r !== '0')
+            notes = filteredRest.join(' | ').trim()
+          } else {
+            // Платный наряд: первый непустой элемент — стоимость, остальное — примечание
+            // Пропускаем пустые элементы в начале
+            let costIndex = 0
+            while (costIndex < rest.length && rest[costIndex] === '') {
+              costIndex++
+            }
+            
+            if (costIndex < rest.length) {
+              const costValue = parseInt(rest[costIndex])
+              if (!isNaN(costValue) && costValue > 0) {
+                diamondCost = costValue
+                notes = rest.slice(costIndex + 1).filter(r => r !== '').join(' | ').trim()
+              } else {
+                // Первый непустой элемент не число — всё примечание
+                notes = rest.filter(r => r !== '').join(' | ').trim()
+              }
+            } else {
+              notes = ''
+            }
+          }
+        }
 
         await createItem({
           storyId,
@@ -96,7 +162,7 @@ export default function BulkImportModal({ isOpen, onClose, storyId }: BulkImport
           season,
           episode,
           isFree,
-          diamondCost,
+          diamondCost: isFree ? 0 : diamondCost,
           isOwned: false,
           isWishlist: false,
           notes,
@@ -135,16 +201,16 @@ export default function BulkImportModal({ isOpen, onClose, storyId }: BulkImport
                 Название | категория | сезон | серия | тип | стоимость | примечание
               </code>
               <p className="text-xs mb-1">
-                <span className="font-semibold">Категории:</span> dress/платье, hairstyle/причёска, accessory/аксессуар, makeup/макияж
+                <span className="font-semibold">Категории:</span> dress/платье, hairstyle/причёска/волосы, accessory/аксессуар/украшение, makeup/макияж
               </p>
               <p className="text-xs mb-1">
-                <span className="font-semibold">Тип:</span> free/бесплатно или diamond/алмазы
+                <span className="font-semibold">Тип:</span> free/бесплатно или diamond/алмазы/платный
               </p>
               <p className="text-xs mb-1">
-                <span className="font-semibold">Стоимость:</span> число (только для diamond)
+                <span className="font-semibold">Стоимость:</span> число (только для diamond). Для free — оставь пустым или пропусти
               </p>
               <p className="text-xs">
-                <span className="font-semibold">Примечание:</span> опционально
+                <span className="font-semibold">Примечание:</span> опционально. Для free всё после типа — примечание. Для diamond всё после стоимости — примечание
               </p>
             </div>
           </div>
@@ -152,13 +218,15 @@ export default function BulkImportModal({ isOpen, onClose, storyId }: BulkImport
 
         {/* Пример */}
         <details className="text-xs font-nunito text-romantic-dark/50">
-          <summary className="cursor-pointer hover:text-romantic-dark">📝 Пример заполнения</summary>
-          <pre className="mt-2 p-3 rounded-xl bg-white/50 overflow-x-auto text-xs">
+          <summary className="cursor-pointer hover:text-romantic-dark">📝 Примеры заполнения</summary>
+          <pre className="mt-2 p-3 rounded-xl bg-white/50 overflow-x-auto text-xs leading-relaxed">
 {`Плащ тайны | dress | 2 | 5 | diamond | 30 | Нужен выбор с Джоном
-Корона королевы | accessory | 2 | 5 | free
-Вечернее платье | dress | 3 | 1 | diamond | 50 | Покупается в магазине
-Причёска "Волна" | hairstyle | 1 | 2 | free
-Макияж "Звезда" | makeup | 4 | 7 | diamond | 20`}
+Корона королевы | украшение | 2 | 5 | бесплатно
+Grave | платье | 3 | 12 | free | | Добавляется автоматически при покупке всех нарядов за 49💎
+Причёска "Волна" | волосы | 1 | 2 | бесплатно
+Макияж "Звезда" | makeup | 4 | 7 | алмазы | 20
+Золотой браслет | аксессуар | 2 | 4 | платный | 15 | Даётся после сцены с Алексом
+Серьги-звёзды | серьги | 1 | 8 | free | | Можно пропустить стоимость для free`}
           </pre>
         </details>
 
@@ -173,7 +241,7 @@ export default function BulkImportModal({ isOpen, onClose, storyId }: BulkImport
               setText(e.target.value)
               setResult(null)
             }}
-            placeholder={`Плащ тайны | dress | 2 | 5 | diamond | 30 | Нужен выбор с Джоном\nКорона королевы | accessory | 2 | 5 | free\nВечернее платье | dress | 3 | 1 | diamond | 50`}
+            placeholder={`Плащ тайны | dress | 2 | 5 | diamond | 30 | Нужен выбор с Джоном\nКорона | аксессуар | 2 | 5 | бесплатно\nВечернее платье | платье | 3 | 1 | алмазы | 50\nGrave | dress | 3 | 12 | free | | Добавляется автоматически`}
             rows={10}
             className="w-full px-4 py-3 rounded-xl border border-romantic-gold/30 
                        bg-white/70 text-romantic-dark font-mono text-sm resize-y

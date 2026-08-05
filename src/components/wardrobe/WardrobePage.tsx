@@ -131,30 +131,30 @@ export default function WardrobePage() {
 
         {/* Кнопки добавления */}
         <div className="flex items-center gap-2 flex-wrap">
-          <Button 
+          <Button
             onClick={() => {
               setQuickAddMode(false)
               setIsAddModalOpen(true)
-            }} 
+            }}
             icon={<Plus size={18} />}
             size="sm"
           >
             Добавить
           </Button>
-          <Button 
+          <Button
             onClick={() => {
               setQuickAddMode(true)
               setIsAddModalOpen(true)
-            }} 
-            icon={<Zap size={18} />} 
+            }}
+            icon={<Zap size={18} />}
             variant="secondary"
             size="sm"
           >
             Быстрое
           </Button>
-          <Button 
-            onClick={() => setIsBulkImportOpen(true)} 
-            icon={<FileText size={18} />} 
+          <Button
+            onClick={() => setIsBulkImportOpen(true)}
+            icon={<FileText size={18} />}
             variant="ghost"
             size="sm"
           >
@@ -209,7 +209,7 @@ export default function WardrobePage() {
               counts={categoryCounts}
             />
           </div>
-          
+
           {/* Кнопки фильтрации: Все / Есть / Нет */}
           <div className="flex items-center gap-1 bg-romantic-pink/30 rounded-2xl p-1">
             {([
@@ -286,10 +286,11 @@ export default function WardrobePage() {
       </div>
 
       {/* Сетка нарядов */}
-      <ItemGrid 
-        items={filteredItems} 
-        isLoading={isLoading} 
+      <ItemGrid
+        items={filteredItems}
+        isLoading={isLoading}
         onEditItem={(item) => setEditingItem(item)}
+        onAddClick={() => setIsAddModalOpen(true)}
       />
 
       {/* Модалка добавления наряда */}

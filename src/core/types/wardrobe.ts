@@ -1,16 +1,10 @@
-// Типы данных для трекера гардероба "Клуб Романтики"
-
-/** Статус прохождения истории */
 export type StoryStatus = 'playing' | 'completed' | 'paused'
-
-/** Категории предметов гардероба */
 export type WardrobeCategory = 'dress' | 'hairstyle' | 'accessory' | 'makeup'
 
-/** Интерфейс истории */
 export interface Story {
   id: string
   title: string
-  cover: string | null // base64 картинка или URL
+  cover: string | null
   totalSeasons: number
   status: StoryStatus
   currentSeason: number
@@ -20,37 +14,28 @@ export interface Story {
   updatedAt: Date
 }
 
-/** Интерфейс предмета гардероба */
 export interface WardrobeItem {
   id: string
-  storyId: string // связь с историей
+  storyId: string
   category: WardrobeCategory
   name: string
-  image: string | null // base64 скриншота или URL
+  image: string | null
   season: number
   episode: number
   isFree: boolean
-  diamondCost: number // 0 если бесплатно
-  isOwned: boolean // галочка "У меня есть"
-  isWishlist: boolean // "Хочу получить"
+  diamondCost: number
+  isOwned: boolean
+  isWishlist: boolean
   notes: string
   createdAt: Date
   updatedAt: Date
 }
 
-/** Данные для создания новой истории (без авто-генерируемых полей) */
 export type CreateStoryInput = Omit<Story, 'id' | 'createdAt' | 'updatedAt'>
-
-/** Данные для создания нового предмета */
 export type CreateWardrobeItemInput = Omit<WardrobeItem, 'id' | 'createdAt' | 'updatedAt'>
-
-/** Данные для обновления истории */
 export type UpdateStoryInput = Partial<Omit<Story, 'id' | 'createdAt' | 'updatedAt'>>
-
-/** Данные для обновления предмета */
 export type UpdateWardrobeItemInput = Partial<Omit<WardrobeItem, 'id' | 'createdAt' | 'updatedAt'>>
 
-/** Статистика по истории */
 export interface StoryStats {
   storyId: string
   storyTitle: string
@@ -65,7 +50,6 @@ export interface StoryStats {
   totalDiamondsSpent: number
 }
 
-/** Общая статистика по всем историям */
 export interface OverallStats {
   totalStories: number
   completedStories: number
@@ -83,7 +67,6 @@ export interface OverallStats {
   }>
 }
 
-/** Категории с русскими названиями */
 export const CATEGORY_LABELS: Record<WardrobeCategory, string> = {
   dress: 'Платья и костюмы',
   hairstyle: 'Причёски',
@@ -91,17 +74,9 @@ export const CATEGORY_LABELS: Record<WardrobeCategory, string> = {
   makeup: 'Макияж',
 }
 
-/** Иконки для категорий (эмодзи) */
 export const CATEGORY_ICONS: Record<WardrobeCategory, string> = {
   dress: '👗',
   hairstyle: '💇‍♀️',
   accessory: '💍',
   makeup: '💄',
-}
-
-/** Статусы историй с русскими названиями */
-export const STORY_STATUS_LABELS: Record<StoryStatus, string> = {
-  playing: 'Прохожу',
-  completed: 'Пройдена',
-  paused: 'Пауза',
 }

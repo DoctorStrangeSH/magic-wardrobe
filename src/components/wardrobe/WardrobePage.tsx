@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Plus, Sparkles, Search, Zap, FileText } from 'lucide-react'
+import { ArrowLeft, Plus, Sparkles, Search, Zap, FileText, Clock, ArrowUpDown } from 'lucide-react'
 import { useWardrobeStore } from '../../store/wardrobeStore'
 import CategoryTabs from './CategoryTabs'
 import ItemGrid from './ItemGrid'
@@ -13,6 +13,7 @@ import Button from '../ui/Button'
 import type { WardrobeCategory, WardrobeItem } from '../../core/types/wardrobe'
 
 type FilterMode = 'all' | 'owned' | 'missing'
+type SortMode = 'newest' | 'oldest' | 'name' | 'season'
 
 export default function WardrobePage() {
   const { storyId } = useParams<{ storyId: string }>()
@@ -26,11 +27,13 @@ export default function WardrobePage() {
     activeCategory,
     searchQuery,
     filterMode,
+    sortBy,
     loadStories,
     selectStory,
     setActiveCategory,
     setSearchQuery,
     setFilterMode,
+    setSortBy,
     getFilteredItems,
   } = useWardrobeStore()
 
@@ -195,7 +198,7 @@ export default function WardrobePage() {
         </div>
       )}
 
-      {/* Фильтры и поиск */}
+      {/* Фильтры, сортировка и поиск */}
       <div className="space-y-3">
         {/* Строка с категориями и фильтрами */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -227,6 +230,39 @@ export default function WardrobePage() {
                 `}
               >
                 <span>{btn.icon}</span>
+                <span className="hidden sm:inline">{btn.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Сортировка */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-romantic-dark/40 font-nunito flex items-center gap-1">
+            <ArrowUpDown size={12} />
+            Сортировка:
+          </span>
+          <div className="flex items-center gap-1 bg-romantic-pink/20 rounded-2xl p-1">
+            {([
+              { value: 'newest' as SortMode, icon: <Clock size={13} />, label: 'Новые' },
+              { value: 'oldest' as SortMode, icon: <Clock size={13} className="rotate-180" />, label: 'Старые' },
+              { value: 'name' as SortMode, icon: <span className="text-xs font-bold">А-Я</span>, label: 'Имя' },
+              { value: 'season' as SortMode, icon: <span className="text-xs font-bold">С</span>, label: 'Сезон' },
+            ]).map((btn) => (
+              <button
+                key={btn.value}
+                onClick={() => setSortBy(btn.value)}
+                className={`
+                  flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-nunito font-medium
+                  transition-all duration-200 whitespace-nowrap
+                  ${sortBy === btn.value
+                    ? 'bg-white text-romantic-dark shadow-sm'
+                    : 'text-romantic-dark/50 hover:text-romantic-dark'
+                  }
+                `}
+                title={btn.label}
+              >
+                {btn.icon}
                 <span className="hidden sm:inline">{btn.label}</span>
               </button>
             ))}

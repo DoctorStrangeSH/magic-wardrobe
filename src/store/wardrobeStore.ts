@@ -13,6 +13,7 @@ import type {
 import { wardrobeService } from '../core/services/wardrobeService'
 
 type FilterMode = 'all' | 'owned' | 'missing'
+type SortMode = 'newest' | 'oldest' | 'name' | 'season'
 
 /**
  * Состояние хранилища гардероба
@@ -30,6 +31,7 @@ interface WardrobeState {
   error: string | null
   activeCategory: WardrobeCategory | 'all'
   filterMode: FilterMode
+  sortBy: SortMode
   searchQuery: string
 
   // ─── ДЕЙСТВИЯ: ИСТОРИИ ──────────────────────
@@ -54,9 +56,10 @@ interface WardrobeState {
   loadOverallStats: () => Promise<void>
   loadStoryStats: (storyId: string) => Promise<void>
 
-  // ─── ДЕЙСТВИЯ: ФИЛЬТРЫ ──────────────────────
+  // ─── ДЕЙСТВИЯ: ФИЛЬТРЫ И СОРТИРОВКА ─────────
   setActiveCategory: (category: WardrobeCategory | 'all') => void
   setFilterMode: (mode: FilterMode) => void
+  setSortBy: (sort: SortMode) => void
   setSearchQuery: (query: string) => void
 
   // ─── ДЕЙСТВИЯ: ИМПОРТ/ЭКСПОРТ ───────────────
@@ -81,6 +84,7 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
   error: null,
   activeCategory: 'all',
   filterMode: 'all',
+  sortBy: 'newest',
   searchQuery: '',
 
   // ─── ДЕЙСТВИЯ: ИСТОРИИ ──────────────────────
@@ -97,7 +101,7 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
   },
 
   selectStory: (storyId: string | null) => {
-    set({ selectedStoryId: storyId, activeCategory: 'all', filterMode: 'all', searchQuery: '' })
+    set({ selectedStoryId: storyId, activeCategory: 'all', filterMode: 'all', sortBy: 'newest', searchQuery: '' })
     if (storyId) {
       get().loadItems(storyId)
       get().loadStoryStats(storyId)
@@ -209,7 +213,7 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
     }
   },
 
-  // ─── ДЕЙСТВИЯ: ФИЛЬТРЫ ──────────────────────
+  // ─── ДЕЙСТВИЯ: ФИЛЬТРЫ И СОРТИРОВКА ─────────
 
   setActiveCategory: (category: WardrobeCategory | 'all') => {
     set({ activeCategory: category })
@@ -217,6 +221,10 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
 
   setFilterMode: (mode: FilterMode) => {
     set({ filterMode: mode })
+  },
+
+  setSortBy: (sort: SortMode) => {
+    set({ sortBy: sort })
   },
 
   setSearchQuery: (query: string) => {
@@ -239,7 +247,7 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
   // ─── ВЫЧИСЛЯЕМЫЕ ЗНАЧЕНИЯ ──────────────────
 
   getFilteredItems: () => {
-    const { currentItems, activeCategory, filterMode, searchQuery } = get()
+    const { currentItems, activeCategory, filterMode, sortBy, searchQuery } = get()
     
     let filtered = [...currentItems]
 
@@ -261,6 +269,22 @@ export const useWardrobeStore = create<WardrobeState>((set, get) => ({
       filtered = filtered.filter(item => 
         item.name.toLowerCase().includes(query)
       )
+    }
+
+    // Сортировка
+    switch (sortBy) {
+      case 'newest':
+        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        break
+      case 'oldest':
+        filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        break
+      case 'name':
+        filtered.sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+        break
+      case 'season':
+        filtered.sort((a, b) => a.season - b.season || a.episode - b.episode)
+        break
     }
 
     return filtered

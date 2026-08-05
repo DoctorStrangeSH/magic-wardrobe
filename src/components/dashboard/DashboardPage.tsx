@@ -5,7 +5,6 @@ import { Sparkles, TrendingUp, ChevronRight, Filter, BarChart3 } from 'lucide-re
 import { useWardrobeStore } from '../../store/wardrobeStore'
 import StatsSummary from './StatsSummary'
 import ProgressBar from '../wardrobe/ProgressBar'
-import Button from '../ui/Button'
 import { StatsSkeleton } from '../ui/Skeleton'
 import EmptyState from '../ui/EmptyState'
 
@@ -112,7 +111,7 @@ export default function DashboardPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
+        transition={{ delay: 0.2 }}
         className="romantic-card rounded-2xl p-6 shadow-card"
       >
         <div className="flex items-center justify-between mb-4">
@@ -174,7 +173,7 @@ export default function DashboardPage() {
                 key={item.storyId}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: index * 0.03 }}
                 exit={{ opacity: 0, x: 20 }}
                 onClick={() => navigate(`/story/${item.storyId}`)}
                 className="romantic-card rounded-2xl p-4 shadow-card cursor-pointer
@@ -182,13 +181,11 @@ export default function DashboardPage() {
                            transition-all duration-200 group active:scale-[0.99]"
               >
                 <div className="flex items-center gap-4">
-                  {/* Аватарка истории */}
                   <div className="w-12 h-12 rounded-xl bg-romantic-pink/50 flex items-center justify-center
                                   text-xl flex-shrink-0">
                     📖
                   </div>
 
-                  {/* Информация */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <h4 className="font-cormorant font-semibold text-romantic-dark truncate">
@@ -209,7 +206,6 @@ export default function DashboardPage() {
                     </p>
                   </div>
 
-                  {/* Стрелка */}
                   <ChevronRight
                     size={20}
                     className="text-romantic-gold/30 group-hover:text-romantic-gold 
@@ -220,29 +216,6 @@ export default function DashboardPage() {
             ))}
           </AnimatePresence>
         </div>
-      </div>
-
-      {/* Быстрые действия */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: '👗 Все истории', path: '/', color: 'bg-romantic-pink/40 hover:bg-romantic-pink/60' },
-          { label: '📊 Статистика', path: '/stats', color: 'bg-blue-50 hover:bg-blue-100' },
-          { label: '⚙️ Настройки', path: '/settings', color: 'bg-amber-50 hover:bg-amber-100' },
-          { label: '📋 Импорт', path: '/settings', color: 'bg-emerald-50 hover:bg-emerald-100' },
-        ].map((action, i) => (
-          <motion.button
-            key={action.label}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.8 + i * 0.1 }}
-            onClick={() => navigate(action.path)}
-            className={`${action.color} rounded-2xl p-4 text-sm font-nunito font-medium
-                       text-romantic-dark/70 hover:text-romantic-dark hover:shadow-card
-                       transition-all duration-200 active:scale-95`}
-          >
-            {action.label}
-          </motion.button>
-        ))}
       </div>
     </div>
   )

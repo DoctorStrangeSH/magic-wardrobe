@@ -11,13 +11,14 @@ import type { Story } from '../../core/types/wardrobe'
 
 export default function StoriesList() {
   const navigate = useNavigate()
-  const { stories, loadStories, isLoading, overallStats } = useWardrobeStore()
+  const { stories, loadStories, loadOverallStats, isLoading, overallStats } = useWardrobeStore()
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingStory, setEditingStory] = useState<Story | null>(null)
 
   useEffect(() => {
     loadStories()
-  }, [loadStories])
+    loadOverallStats()
+  }, [loadStories, loadOverallStats])
 
   const storyProgressMap = useMemo(() => {
     if (!overallStats?.storiesBreakdown) return {}

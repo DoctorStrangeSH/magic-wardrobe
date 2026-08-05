@@ -53,18 +53,6 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
     onEdit?.(item)
   }
 
-  const handleShowDelete = (e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-    setShowDeleteConfirm(true)
-  }
-
-  const handleCancelDelete = (e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-    setShowDeleteConfirm(false)
-  }
-
   const handleMenuToggle = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation()
     e.preventDefault()
@@ -91,33 +79,26 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
     <>
       <motion.article
         ref={cardRef}
-        layout
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ 
-          opacity: 1, 
-          scale: 1,
-          boxShadow: item.isOwned 
-            ? '0 8px 25px rgba(212, 167, 116, 0.15), 0 0 20px rgba(212, 167, 116, 0.08)' 
-            : '0 2px 12px rgba(45, 27, 78, 0.06)',
-        }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.1 }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => {
           setIsHovered(false)
           setShowDeleteConfirm(false)
           setShowMenu(false)
         }}
-        whileHover={{ scale: 1.02, y: -2 }}
+        whileHover={{ scale: 1.01 }}
         onClick={handleCardClick}
         className={`
           group relative romantic-card rounded-2xl overflow-hidden
-          shadow-card hover:shadow-xl cursor-pointer
-          transition-shadow duration-300
+          shadow-card hover:shadow-lg cursor-pointer
+          transition-shadow duration-200
           ${item.isOwned ? 'ring-1 ring-romantic-gold/30' : ''}
         `}
       >
-        {/* Эффект мерцания для алмазных нарядов */}
+        {/* Эффект мерцания для алмазных */}
         {!item.isFree && !item.isOwned && <ShimmerEffect />}
 
         {/* Изображение */}
@@ -128,142 +109,87 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
               <img
                 src={item.image}
                 alt={item.name}
-                className="w-full h-auto max-h-[260px] object-contain transition-all duration-500
+                className="w-full h-auto max-h-[260px] object-contain transition-transform duration-300
                            group-hover:scale-105"
+                loading="lazy"
               />
             </div>
           ) : (
-            <motion.div
-              className="py-10 text-center"
-              animate={{ y: [0, -3, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <span className="text-5xl opacity-80">
+            <div className="py-10 text-center">
+              <span className="text-4xl opacity-70">
                 {item.category === 'dress' ? '👗' :
                  item.category === 'hairstyle' ? '💇‍♀️' :
                  item.category === 'accessory' ? '💍' : '💄'}
               </span>
-            </motion.div>
+            </div>
           )}
-
-          {/* Кнопка просмотра (десктоп) */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isHovered && !showMenu ? 1 : 0 }}
-            className="absolute inset-0 bg-gradient-to-t from-romantic-darker/60 via-transparent to-transparent 
-                       hidden sm:flex items-end justify-center pb-4 pointer-events-none"
-          >
-            <span className="px-4 py-2 rounded-xl bg-white/95 text-romantic-dark font-nunito text-xs
-                           flex items-center gap-2 shadow-lg font-medium">
-              <Eye size={14} />
-              Подробнее
-            </span>
-          </motion.div>
 
           {/* Бейдж "Особые условия" */}
           {!item.isOwned && hasSpecialCondition && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-              className="absolute top-2 left-2"
-            >
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full 
+            <div className="absolute top-2 left-2 z-10">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-full 
                               bg-gradient-to-r from-amber-400 to-orange-500 
-                              text-white text-[11px] font-nunito font-bold shadow-lg
-                              border border-amber-300/50 backdrop-blur-sm">
-                <Star size={11} className="fill-white" />
+                              text-white text-[10px] font-nunito font-bold shadow-md">
+                <Star size={10} className="fill-white" />
                 Особые условия
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Кнопка меню */}
-          <div className="absolute top-2 right-2" data-no-detail>
-            <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ 
-                opacity: isHovered || showMenu ? 1 : 0,
-                scale: isHovered || showMenu ? 1 : 0.8
-              }}
-              whileTap={{ scale: 0.9 }}
+          <div className="absolute top-2 right-2 z-10" data-no-detail>
+            <button
               onClick={handleMenuToggle}
-              className="w-8 h-8 rounded-xl bg-white/85 backdrop-blur-sm 
+              className="w-7 h-7 rounded-lg bg-white/85 backdrop-blur-sm 
                          flex items-center justify-center
-                         text-romantic-dark/60 hover:text-romantic-dark 
-                         hover:bg-white transition-all shadow-md"
+                         text-romantic-dark/50 hover:text-romantic-dark 
+                         hover:bg-white transition-all shadow-sm"
             >
-              <MoreVertical size={15} />
-            </motion.button>
+              <MoreVertical size={14} />
+            </button>
           </div>
 
-          {/* Выпадающее меню */}
+          {/* Меню */}
           <AnimatePresence>
             {showMenu && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: -5 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: -5 }}
-                className="absolute top-12 right-2 z-20 bg-white/95 backdrop-blur-md 
-                           rounded-2xl shadow-xl border border-romantic-gold/20 
-                           overflow-hidden min-w-[150px]"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="absolute top-10 right-2 z-20 bg-white/95 backdrop-blur-md 
+                           rounded-xl shadow-lg border border-romantic-gold/20 
+                           overflow-hidden min-w-[130px]"
                 onClick={(e) => e.stopPropagation()}
                 data-no-detail
               >
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    e.preventDefault()
-                    setShowDetail(true)
-                    setShowMenu(false)
-                  }}
-                  className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-nunito
-                             text-romantic-dark/70 hover:bg-romantic-pink/30 transition-colors
-                             border-b border-romantic-pink/30"
+                  onClick={(e) => { e.stopPropagation(); setShowDetail(true); setShowMenu(false) }}
+                  className="flex items-center gap-2 w-full px-3 py-2.5 text-xs font-nunito
+                             text-romantic-dark/70 hover:bg-romantic-pink/30 border-b border-romantic-pink/30"
                 >
-                  <Eye size={16} />
-                  Подробнее
+                  <Eye size={14} /> Подробнее
                 </button>
                 <button
                   onClick={handleEdit}
-                  className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-nunito
-                             text-romantic-dark/70 hover:bg-romantic-pink/30 
-                             hover:text-romantic-gold transition-colors
-                             border-b border-romantic-pink/30"
+                  className="flex items-center gap-2 w-full px-3 py-2.5 text-xs font-nunito
+                             text-romantic-dark/70 hover:bg-romantic-pink/30 border-b border-romantic-pink/30"
                 >
-                  <Edit3 size={16} />
-                  Редактировать
+                  <Edit3 size={14} /> Редактировать
                 </button>
                 {!showDeleteConfirm ? (
                   <button
-                    onClick={handleShowDelete}
-                    className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-nunito
-                               text-romantic-dark/70 hover:bg-red-50 
-                               hover:text-romantic-crimson transition-colors"
+                    onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true) }}
+                    className="flex items-center gap-2 w-full px-3 py-2.5 text-xs font-nunito
+                               text-romantic-dark/70 hover:bg-red-50 hover:text-romantic-crimson"
                   >
-                    <Trash2 size={16} />
-                    Удалить
+                    <Trash2 size={14} /> Удалить
                   </button>
                 ) : (
-                  <div className="p-3 space-y-2 bg-red-50">
-                    <p className="text-xs text-romantic-dark/70 font-nunito text-center">
-                      Удалить наряд?
-                    </p>
-                    <div className="flex gap-2 justify-center">
-                      <button
-                        onClick={handleDelete}
-                        className="px-3 py-1.5 rounded-lg bg-romantic-crimson text-white text-xs font-bold
-                                   hover:bg-red-700 transition-colors"
-                      >
-                        Да
-                      </button>
-                      <button
-                        onClick={handleCancelDelete}
-                        className="px-3 py-1.5 rounded-lg bg-white text-romantic-dark text-xs
-                                   hover:bg-gray-100 transition-colors"
-                      >
-                        Нет
-                      </button>
+                  <div className="p-2 space-y-1.5 bg-red-50">
+                    <p className="text-[10px] text-center">Удалить?</p>
+                    <div className="flex gap-1.5 justify-center">
+                      <button onClick={handleDelete} className="px-2.5 py-1 rounded-md bg-romantic-crimson text-white text-[10px] font-bold">Да</button>
+                      <button onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false) }} className="px-2.5 py-1 rounded-md bg-white text-[10px]">Нет</button>
                     </div>
                   </div>
                 )}
@@ -273,58 +199,31 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
         </div>
 
         {/* Информация */}
-        <div className="p-3 space-y-2">
+        <div className="p-2.5 space-y-1.5">
           <h4 className="font-cormorant font-semibold text-romantic-dark text-sm leading-tight line-clamp-2">
             {item.name}
           </h4>
 
-          <p className="text-[11px] text-romantic-dark/40 font-nunito font-medium">
+          <p className="text-[10px] text-romantic-dark/40 font-nunito">
             Сезон {item.season}, Серия {item.episode}
           </p>
 
           <div className="flex items-center justify-between">
             {item.isFree ? (
-              <Badge variant="free" icon={<span>🆓</span>}>
-                Бесплатно
-              </Badge>
+              <Badge variant="free" icon={<span>🆓</span>}>Бесплатно</Badge>
             ) : (
-              <Badge variant="diamond" icon={<Diamond size={11} />}>
-                {item.diamondCost} 💎
-              </Badge>
+              <Badge variant="diamond" icon={<Diamond size={10} />}>{item.diamondCost} 💎</Badge>
             )}
 
-            {/* Галочка "У меня есть" */}
-            <motion.div 
-              onClick={handleToggleOwned}
-              data-no-detail
-              className="cursor-pointer z-10 p-1 -m-1"
-              whileTap={{ scale: 0.85 }}
-            >
-              <Checkbox
-                checked={item.isOwned}
-                onChange={() => {}}
-              />
-            </motion.div>
+            <div onClick={handleToggleOwned} data-no-detail className="cursor-pointer z-10 p-1 -m-1">
+              <Checkbox checked={item.isOwned} onChange={() => {}} />
+            </div>
           </div>
         </div>
-
-        {/* Магическое свечение для собранных нарядов */}
-        {item.isOwned && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="absolute -inset-1 rounded-2xl pointer-events-none"
-            style={{
-              background: 'radial-gradient(circle at center, rgba(212,167,116,0.08) 0%, transparent 70%)',
-            }}
-          />
-        )}
       </motion.article>
 
-      {/* Эффект звёздочек */}
-      <SparkleEffect isActive={showSparkle} x={sparklePos.x} y={sparklePos.y} count={12} />
+      <SparkleEffect isActive={showSparkle} x={sparklePos.x} y={sparklePos.y} count={8} />
 
-      {/* Модальное окно с деталями наряда */}
       <ItemDetailModal
         isOpen={showDetail}
         onClose={() => setShowDetail(false)}

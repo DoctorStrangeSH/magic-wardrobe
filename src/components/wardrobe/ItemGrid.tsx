@@ -13,7 +13,6 @@ interface ItemGridProps {
 }
 
 export default function ItemGrid({ items, isLoading, onEditItem, onAddClick }: ItemGridProps) {
-  // Загрузка
   if (isLoading && items.length === 0) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -24,13 +23,12 @@ export default function ItemGrid({ items, isLoading, onEditItem, onAddClick }: I
     )
   }
 
-  // Пустое состояние
   if (items.length === 0) {
     return (
       <EmptyState
         icon={<Sparkles size={40} />}
         title="Нарядов пока нет"
-        description="Добавь первый наряд в этой истории — используй кнопку выше или быстрый импорт"
+        description="Добавь первый наряд — используй кнопку выше или быстрый импорт"
         action={onAddClick ? {
           label: 'Добавить наряд',
           onClick: onAddClick,
@@ -42,7 +40,7 @@ export default function ItemGrid({ items, isLoading, onEditItem, onAddClick }: I
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-      <AnimatePresence mode="popLayout">
+      <AnimatePresence>
         {items.map((item) => (
           <ItemCard key={item.id} item={item} onEdit={onEditItem} />
         ))}

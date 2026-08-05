@@ -1,9 +1,9 @@
-import { useState, useRef, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Play, CheckCircle2, PauseCircle, Edit3, Trash2, MoreVertical } from 'lucide-react'
 import type { Story } from '../../core/types/wardrobe'
-import MagicGlow from '../effects/MagicGlow'
 import { useWardrobeStore } from '../../store/wardrobeStore'
+
 
 interface StoryCardProps {
   story: Story
@@ -16,17 +16,20 @@ const statusConfig = {
   playing: {
     icon: Play,
     label: 'Прохожу',
-    color: 'text-emerald-500 bg-emerald-50',
+    gradient: 'from-emerald-500 to-teal-500',
+    bg: 'bg-emerald-50',
   },
   completed: {
     icon: CheckCircle2,
     label: 'Пройдена',
-    color: 'text-romantic-gold bg-romantic-gold/10',
+    gradient: 'from-romantic-gold to-amber-500',
+    bg: 'bg-romantic-gold/10',
   },
   paused: {
     icon: PauseCircle,
     label: 'Пауза',
-    color: 'text-slate-500 bg-slate-50',
+    gradient: 'from-slate-400 to-slate-500',
+    bg: 'bg-slate-50',
   },
 }
 
@@ -34,18 +37,14 @@ export default function StoryCard({ story, progress = 0, onClick, onEdit }: Stor
   const { deleteStory } = useWardrobeStore()
   const status = statusConfig[story.status]
   const StatusIcon = status.icon
-  
   const [isHovered, setIsHovered] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  
-  // Для долгого нажатия на мобильных
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const isTouchDevice = useRef(false)
 
   const handleDelete = async (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation()
     e.preventDefault()
+    setShowMenu(false)
     await deleteStory(story.id)
   }
 
@@ -56,302 +55,186 @@ export default function StoryCard({ story, progress = 0, onClick, onEdit }: Stor
     onEdit?.()
   }
 
-  const handleShowDeleteConfirm = (e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-    setShowDeleteConfirm(true)
-    setShowMenu(false)
-  }
-
-  const handleCancelDelete = (e: React.MouseEvent | React.TouchEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-    setShowDeleteConfirm(false)
-  }
-
-  // Долгое нажатие для мобильных
-  const handleTouchStart = useCallback(() => {
-    isTouchDevice.current = true
-    longPressTimer.current = setTimeout(() => {
-      setShowMenu(true)
-    }, 500) // 500ms долгое нажатие
-  }, [])
-
-  const handleTouchEnd = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current)
-      longPressTimer.current = null
-    }
-  }, [])
-
-  const handleTouchMove = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current)
-      longPressTimer.current = null
-    }
-  }, [])
-
-  // Клик по карточке
-  const handleCardClick = () => {
-    if (showMenu || showDeleteConfirm) {
-      setShowMenu(false)
-      setShowDeleteConfirm(false)
-      return
-    }
-    onClick?.()
-  }
-
-  // Закрыть меню при клике вне карточки
-  const handleBlur = () => {
-    setShowMenu(false)
-    setShowDeleteConfirm(false)
-  }
-
   return (
     <motion.article
-      onClick={handleCardClick}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchMove={handleTouchMove}
+      onClick={onClick}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, scale: 1.01 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ y: -6, scale: 1.02 }}
+      whileTap={{ scale: 0.97 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-      onMouseEnter={() => {
-        if (!isTouchDevice.current) setIsHovered(true)
-      }}
+      onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false)
+        setShowMenu(false)
         setShowDeleteConfirm(false)
-        if (!isTouchDevice.current) setShowMenu(false)
       }}
-      tabIndex={0}
-      onBlur={handleBlur}
-      className="
-        group relative romantic-card rounded-2xl overflow-hidden
-        shadow-card hover:shadow-card-hover
-        cursor-pointer outline-none
-      "
+      className="group relative romantic-card rounded-2xl overflow-hidden shadow-card 
+                 hover:shadow-xl transition-shadow duration-300 cursor-pointer"
     >
-      {/* Магическое свечение для пройденных историй */}
-      {story.status === 'completed' && (
-        <MagicGlow isActive color="#d4a574" size={80} className="-top-4 -right-4" />
-      )}
-
       {/* Обложка */}
-      <div className="aspect-[3/4] bg-gradient-to-br from-romantic-pink to-romantic-dark/10 
+      <div className="aspect-[3/4] bg-gradient-to-br from-romantic-pink/30 to-romantic-dark/5 
                       flex items-center justify-center overflow-hidden relative">
         {story.cover ? (
-          <motion.img
+          <img
             src={story.cover}
             alt={story.title}
-            className="w-full h-full object-cover"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.4 }}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
           <motion.div
             className="text-center p-4"
-            animate={{ y: [0, -5, 0] }}
+            animate={{ y: [0, -4, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-romantic-gold/20 
-                            flex items-center justify-center">
-              <span className="text-3xl font-cormorant text-romantic-gold/60">
+            <div className="w-20 h-20 mx-auto mb-3 rounded-2xl bg-romantic-gold/10 
+                            flex items-center justify-center backdrop-blur-sm
+                            border border-romantic-gold/20">
+              <span className="text-4xl font-cormorant text-romantic-gold/40">
                 {story.title.charAt(0)}
               </span>
             </div>
-            <p className="text-romantic-dark/40 font-cormorant text-sm italic">
-              Загрузи обложку
-            </p>
           </motion.div>
         )}
 
-        {/* Десктоп: кнопки при наведении */}
+        {/* Градиент при наведении */}
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: isHovered && !showMenu ? 1 : 0 }}
-          className="absolute top-2 right-2 gap-1.5 hidden sm:flex"
-        >
+          animate={{ opacity: isHovered ? 1 : 0 }}
+          className="absolute inset-0 bg-gradient-to-t from-romantic-darker/70 via-romantic-darker/20 to-transparent"
+        />
+
+        {/* Кнопка меню */}
+        <div className="absolute top-3 right-3 z-10">
           <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={(e) => {
-              e.stopPropagation()
-              onEdit?.()
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ 
+              opacity: isHovered || showMenu ? 1 : 0,
+              scale: isHovered || showMenu ? 1 : 0.8
             }}
-            className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm 
-                       flex items-center justify-center
-                       text-romantic-dark/60 hover:text-romantic-gold 
-                       hover:bg-white transition-colors shadow-sm"
-            title="Редактировать"
-          >
-            <Edit3 size={15} />
-          </motion.button>
-
-          {!showDeleteConfirm ? (
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowDeleteConfirm(true)
-              }}
-              className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm 
-                         flex items-center justify-center
-                         text-romantic-dark/60 hover:text-romantic-crimson 
-                         hover:bg-white transition-colors shadow-sm"
-              title="Удалить"
-            >
-              <Trash2 size={15} />
-            </motion.button>
-          ) : (
-            <div className="flex gap-1">
-              <motion.button
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                whileHover={{ scale: 1.05 }}
-                onClick={handleDelete}
-                className="px-2.5 py-1 rounded-lg bg-romantic-crimson text-white text-xs font-bold"
-              >
-                Удалить
-              </motion.button>
-              <motion.button
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                whileHover={{ scale: 1.05 }}
-                onClick={handleCancelDelete}
-                className="px-2.5 py-1 rounded-lg bg-white/80 text-romantic-dark text-xs"
-              >
-                Нет
-              </motion.button>
-            </div>
-          )}
-        </motion.div>
-
-        {/* Мобильное меню (три точки) */}
-        <div className="absolute top-2 right-2 sm:hidden">
-          <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={(e) => {
               e.stopPropagation()
               setShowMenu(!showMenu)
               setShowDeleteConfirm(false)
             }}
-            className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm 
+            className="w-9 h-9 rounded-xl bg-white/90 backdrop-blur-sm 
                        flex items-center justify-center
-                       text-romantic-dark/70 hover:bg-white transition-colors shadow-sm"
+                       text-romantic-dark/70 hover:text-romantic-dark 
+                       hover:bg-white transition-all shadow-lg"
           >
-            <MoreVertical size={16} />
+            <MoreVertical size={17} />
           </motion.button>
         </div>
 
-        {/* Мобильное выпадающее меню */}
-        {showMenu && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: -5 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="absolute top-12 right-2 z-20 bg-white/95 backdrop-blur-sm 
-                       rounded-2xl shadow-lg border border-romantic-gold/20 
-                       overflow-hidden sm:hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={handleEdit}
-              className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
-                         text-romantic-dark/70 hover:bg-romantic-pink/30 
-                         hover:text-romantic-gold transition-colors"
+        {/* Выпадающее меню */}
+        <AnimatePresence>
+          {showMenu && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: -5 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: -5 }}
+              className="absolute top-14 right-3 z-20 bg-white/95 backdrop-blur-md 
+                         rounded-2xl shadow-xl border border-romantic-gold/20 
+                         overflow-hidden min-w-[150px]"
+              onClick={(e) => e.stopPropagation()}
             >
-              <Edit3 size={16} />
-              Редактировать
-            </button>
-            {!showDeleteConfirm ? (
               <button
-                onClick={handleShowDeleteConfirm}
-                className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
-                           text-romantic-dark/70 hover:bg-red-50 
-                           hover:text-romantic-crimson transition-colors"
+                onClick={handleEdit}
+                className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-nunito
+                           text-romantic-dark/70 hover:bg-romantic-pink/30 
+                           hover:text-romantic-gold transition-colors"
               >
-                <Trash2 size={16} />
-                Удалить
+                <Edit3 size={16} />
+                Редактировать
               </button>
-            ) : (
-              <div className="p-3 space-y-2">
-                <p className="text-xs text-romantic-dark/70 font-nunito text-center">
-                  Удалить историю?
-                </p>
-                <div className="flex gap-2 justify-center">
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleDelete}
-                    className="px-3 py-1.5 rounded-lg bg-romantic-crimson text-white text-xs font-bold"
-                  >
-                    Да
-                  </motion.button>
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleCancelDelete}
-                    className="px-3 py-1.5 rounded-lg bg-romantic-pink/50 text-romantic-dark text-xs"
-                  >
-                    Нет
-                  </motion.button>
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowDeleteConfirm(true)
+                  }}
+                  className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-nunito
+                             text-romantic-dark/70 hover:bg-red-50 
+                             hover:text-romantic-crimson transition-colors"
+                >
+                  <Trash2 size={16} />
+                  Удалить
+                </button>
+              ) : (
+                <div className="p-3 space-y-2 bg-red-50">
+                  <p className="text-xs text-romantic-dark/70 font-nunito text-center">
+                    Удалить историю?
+                  </p>
+                  <div className="flex gap-2 justify-center">
+                    <button
+                      onClick={handleDelete}
+                      className="px-3 py-1.5 rounded-lg bg-romantic-crimson text-white text-xs font-bold
+                                 hover:bg-red-700 transition-colors"
+                    >
+                      Да
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowDeleteConfirm(false)
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-white text-romantic-dark text-xs
+                                 hover:bg-gray-100 transition-colors"
+                    >
+                      Нет
+                    </button>
+                  </div>
                 </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Прогресс на обложке */}
+        {progress > 0 && (
+          <div className="absolute bottom-3 left-3 right-3">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-1.5 bg-white/30 rounded-full overflow-hidden backdrop-blur-sm">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+                  className={`h-full bg-gradient-to-r ${status.gradient} rounded-full`}
+                />
               </div>
-            )}
-          </motion.div>
+              <span className="text-xs font-nunito font-bold text-white drop-shadow-md">
+                {progress}%
+              </span>
+            </div>
+          </div>
         )}
       </div>
 
       {/* Информация */}
       <div className="p-4 space-y-3">
-        <h3 className="font-cormorant text-lg font-semibold text-romantic-dark 
+        <h3 className="font-cormorant text-lg font-bold text-romantic-dark 
                        group-hover:text-romantic-crimson transition-colors truncate">
           {story.title}
         </h3>
 
         <div className="flex items-center justify-between">
-          <motion.span
-            whileHover={{ scale: 1.05 }}
-            className={`
-              inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-nunito font-medium
-              ${status.color}
-            `}
-          >
+          <span className={`
+            inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-nunito font-semibold
+            ${status.bg} text-romantic-dark/80
+          `}>
             <StatusIcon size={14} />
             {status.label}
-          </motion.span>
-          <span className="text-xs text-romantic-dark/40 font-nunito">
+          </span>
+          <span className="text-xs text-romantic-dark/40 font-nunito font-medium">
             {story.totalSeasons} сез.
           </span>
         </div>
-
-        {/* Прогресс-бар */}
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs font-nunito">
-            <span className="text-romantic-dark/50">Гардероб</span>
-            <motion.span
-              key={progress}
-              initial={{ scale: 1.3, color: '#d4a574' }}
-              animate={{ scale: 1, color: '#2d1b4e' }}
-              className="text-romantic-gold font-semibold"
-            >
-              {progress}%
-            </motion.span>
-          </div>
-          <div className="w-full h-2 bg-romantic-pink/50 rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
-              className="h-full bg-gradient-to-r from-romantic-gold to-romantic-lightGold 
-                         rounded-full relative"
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent rounded-full" />
-            </motion.div>
-          </div>
-        </div>
       </div>
+
+      {/* Декоративный блик */}
+      <div className="absolute -top-10 -right-10 w-20 h-20 bg-romantic-gold/5 rounded-full 
+                      blur-2xl group-hover:bg-romantic-gold/10 transition-colors pointer-events-none" />
     </motion.article>
   )
 }

@@ -14,16 +14,22 @@ export default function Checkbox({ checked, onChange, label, className = '' }: C
       <motion.div
         whileTap={{ scale: 0.85 }}
         animate={{
+          scale: checked ? [1, 1.2, 1] : 1,
           borderColor: checked ? '#d4a574' : 'rgba(212,167,116,0.4)',
           backgroundColor: checked ? '#d4a574' : 'rgba(255,255,255,0.5)',
           boxShadow: checked 
-            ? '0 0 12px rgba(212,167,116,0.4)' 
+            ? '0 0 14px rgba(212,167,116,0.5)' 
             : '0 0 0px rgba(212,167,116,0)',
         }}
+        transition={{ 
+          scale: { duration: 0.2 },
+          default: { duration: 0.2 }
+        }}
         className={`
-          w-5 h-5 rounded-md border-2 flex items-center justify-center
+          w-5 h-5 rounded-lg border-2 flex items-center justify-center
           transition-colors duration-200 flex-shrink-0
           group-hover:border-romantic-gold/70
+          group-hover:shadow-md
         `}
       >
         <motion.div

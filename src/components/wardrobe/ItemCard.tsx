@@ -97,8 +97,8 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
           opacity: 1, 
           scale: 1,
           boxShadow: item.isOwned 
-            ? '0 4px 20px rgba(212, 167, 116, 0.2), 0 0 15px rgba(212, 167, 116, 0.1)' 
-            : '0 2px 12px rgba(45, 27, 78, 0.08)',
+            ? '0 8px 25px rgba(212, 167, 116, 0.15), 0 0 20px rgba(212, 167, 116, 0.08)' 
+            : '0 2px 12px rgba(45, 27, 78, 0.06)',
         }}
         exit={{ opacity: 0, scale: 0.9 }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
@@ -108,49 +108,54 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
           setShowDeleteConfirm(false)
           setShowMenu(false)
         }}
-        whileHover={{ scale: 1.02 }}
+        whileHover={{ scale: 1.02, y: -2 }}
         onClick={handleCardClick}
         className={`
           group relative romantic-card rounded-2xl overflow-hidden
-          shadow-card hover:shadow-card-hover cursor-pointer
+          shadow-card hover:shadow-xl cursor-pointer
           transition-shadow duration-300
-          ${item.isOwned ? 'ring-1 ring-romantic-gold/40' : ''}
+          ${item.isOwned ? 'ring-1 ring-romantic-gold/30' : ''}
         `}
       >
         {/* Эффект мерцания для алмазных нарядов */}
         {!item.isFree && !item.isOwned && <ShimmerEffect />}
 
         {/* Изображение */}
-        <div className="relative w-full bg-gradient-to-br from-romantic-pink/50 to-romantic-dark/5 
+        <div className="relative w-full bg-gradient-to-br from-romantic-pink/30 to-romantic-dark/3 
                         flex items-center justify-center overflow-hidden">
           {item.image ? (
-            <div className="w-full" style={{ maxHeight: '280px' }}>
+            <div className="w-full" style={{ maxHeight: '260px' }}>
               <img
                 src={item.image}
                 alt={item.name}
-                className="w-full h-auto max-h-[280px] object-contain transition-all duration-500"
+                className="w-full h-auto max-h-[260px] object-contain transition-all duration-500
+                           group-hover:scale-105"
               />
             </div>
           ) : (
-            <div className="py-8 text-center transition-all duration-500">
-              <span className="text-5xl">
+            <motion.div
+              className="py-10 text-center"
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <span className="text-5xl opacity-80">
                 {item.category === 'dress' ? '👗' :
                  item.category === 'hairstyle' ? '💇‍♀️' :
                  item.category === 'accessory' ? '💍' : '💄'}
               </span>
-            </div>
+            </motion.div>
           )}
 
           {/* Кнопка просмотра (десктоп) */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: isHovered && !showMenu ? 1 : 0 }}
-            className="absolute inset-0 bg-gradient-to-t from-romantic-darker/50 to-transparent 
-                       hidden sm:flex items-center justify-center pointer-events-none"
+            className="absolute inset-0 bg-gradient-to-t from-romantic-darker/60 via-transparent to-transparent 
+                       hidden sm:flex items-end justify-center pb-4 pointer-events-none"
           >
-            <span className="px-4 py-2 rounded-xl bg-white/90 text-romantic-dark font-nunito text-sm
-                           flex items-center gap-2 shadow-lg">
-              <Eye size={16} />
+            <span className="px-4 py-2 rounded-xl bg-white/95 text-romantic-dark font-nunito text-xs
+                           flex items-center gap-2 shadow-lg font-medium">
+              <Eye size={14} />
               Подробнее
             </span>
           </motion.div>
@@ -160,13 +165,14 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
               className="absolute top-2 left-2"
             >
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full 
-                              bg-gradient-to-r from-amber-400 to-orange-400 
-                              text-white text-xs font-nunito font-bold shadow-lg
-                              border border-amber-300/50">
-                <Star size={12} className="fill-white" />
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full 
+                              bg-gradient-to-r from-amber-400 to-orange-500 
+                              text-white text-[11px] font-nunito font-bold shadow-lg
+                              border border-amber-300/50 backdrop-blur-sm">
+                <Star size={11} className="fill-white" />
                 Особые условия
               </div>
             </motion.div>
@@ -175,13 +181,19 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
           {/* Кнопка меню */}
           <div className="absolute top-2 right-2" data-no-detail>
             <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ 
+                opacity: isHovered || showMenu ? 1 : 0,
+                scale: isHovered || showMenu ? 1 : 0.8
+              }}
               whileTap={{ scale: 0.9 }}
               onClick={handleMenuToggle}
-              className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm 
+              className="w-8 h-8 rounded-xl bg-white/85 backdrop-blur-sm 
                          flex items-center justify-center
-                         text-romantic-dark/70 hover:bg-white transition-colors shadow-sm"
+                         text-romantic-dark/60 hover:text-romantic-dark 
+                         hover:bg-white transition-all shadow-md"
             >
-              <MoreVertical size={16} />
+              <MoreVertical size={15} />
             </motion.button>
           </div>
 
@@ -189,11 +201,12 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
           <AnimatePresence>
             {showMenu && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.8, y: -5 }}
+                initial={{ opacity: 0, scale: 0.9, y: -5 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8, y: -5 }}
-                className="absolute top-12 right-2 z-20 bg-white/95 backdrop-blur-sm 
-                           rounded-2xl shadow-lg border border-romantic-gold/20 overflow-hidden min-w-[140px]"
+                exit={{ opacity: 0, scale: 0.9, y: -5 }}
+                className="absolute top-12 right-2 z-20 bg-white/95 backdrop-blur-md 
+                           rounded-2xl shadow-xl border border-romantic-gold/20 
+                           overflow-hidden min-w-[150px]"
                 onClick={(e) => e.stopPropagation()}
                 data-no-detail
               >
@@ -204,7 +217,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
                     setShowDetail(true)
                     setShowMenu(false)
                   }}
-                  className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
+                  className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-nunito
                              text-romantic-dark/70 hover:bg-romantic-pink/30 transition-colors
                              border-b border-romantic-pink/30"
                 >
@@ -213,7 +226,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
                 </button>
                 <button
                   onClick={handleEdit}
-                  className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
+                  className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-nunito
                              text-romantic-dark/70 hover:bg-romantic-pink/30 
                              hover:text-romantic-gold transition-colors
                              border-b border-romantic-pink/30"
@@ -224,7 +237,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
                 {!showDeleteConfirm ? (
                   <button
                     onClick={handleShowDelete}
-                    className="flex items-center gap-2 w-full px-4 py-3 text-sm font-nunito
+                    className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-nunito
                                text-romantic-dark/70 hover:bg-red-50 
                                hover:text-romantic-crimson transition-colors"
                   >
@@ -232,20 +245,22 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
                     Удалить
                   </button>
                 ) : (
-                  <div className="p-3 space-y-2 bg-red-50/50">
+                  <div className="p-3 space-y-2 bg-red-50">
                     <p className="text-xs text-romantic-dark/70 font-nunito text-center">
                       Удалить наряд?
                     </p>
                     <div className="flex gap-2 justify-center">
                       <button
                         onClick={handleDelete}
-                        className="px-3 py-1.5 rounded-lg bg-romantic-crimson text-white text-xs font-bold"
+                        className="px-3 py-1.5 rounded-lg bg-romantic-crimson text-white text-xs font-bold
+                                   hover:bg-red-700 transition-colors"
                       >
                         Да
                       </button>
                       <button
                         onClick={handleCancelDelete}
-                        className="px-3 py-1.5 rounded-lg bg-white/80 text-romantic-dark text-xs"
+                        className="px-3 py-1.5 rounded-lg bg-white text-romantic-dark text-xs
+                                   hover:bg-gray-100 transition-colors"
                       >
                         Нет
                       </button>
@@ -263,7 +278,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
             {item.name}
           </h4>
 
-          <p className="text-xs text-romantic-dark/50 font-nunito">
+          <p className="text-[11px] text-romantic-dark/40 font-nunito font-medium">
             Сезон {item.season}, Серия {item.episode}
           </p>
 
@@ -273,38 +288,41 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
                 Бесплатно
               </Badge>
             ) : (
-              <Badge variant="diamond" icon={<Diamond size={12} />}>
+              <Badge variant="diamond" icon={<Diamond size={11} />}>
                 {item.diamondCost} 💎
               </Badge>
             )}
 
             {/* Галочка "У меня есть" */}
-            <div 
+            <motion.div 
               onClick={handleToggleOwned}
               data-no-detail
               className="cursor-pointer z-10 p-1 -m-1"
+              whileTap={{ scale: 0.85 }}
             >
               <Checkbox
                 checked={item.isOwned}
                 onChange={() => {}}
               />
-            </div>
+            </motion.div>
           </div>
         </div>
 
         {/* Магическое свечение для собранных нарядов */}
         {item.isOwned && (
-          <div 
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             className="absolute -inset-1 rounded-2xl pointer-events-none"
             style={{
-              background: 'radial-gradient(circle at center, rgba(212,167,116,0.1) 0%, transparent 70%)',
+              background: 'radial-gradient(circle at center, rgba(212,167,116,0.08) 0%, transparent 70%)',
             }}
           />
         )}
       </motion.article>
 
       {/* Эффект звёздочек */}
-      <SparkleEffect isActive={showSparkle} x={sparklePos.x} y={sparklePos.y} count={10} />
+      <SparkleEffect isActive={showSparkle} x={sparklePos.x} y={sparklePos.y} count={12} />
 
       {/* Модальное окно с деталями наряда */}
       <ItemDetailModal

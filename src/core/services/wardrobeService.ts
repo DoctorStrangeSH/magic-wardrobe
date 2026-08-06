@@ -5,6 +5,8 @@ import type {
 } from '../types/wardrobe'
 
 export const wardrobeService = {
+  // ─── ИСТОРИИ ────────────────────────────────
+
   async getAllStories(): Promise<Story[]> {
     const { data, error } = await supabase.from('stories').select('*').order('created_at', { ascending: false })
     if (error) throw error
@@ -18,13 +20,35 @@ export const wardrobeService = {
   },
 
   async createStory(input: CreateStoryInput): Promise<Story> {
-    const { data, error } = await supabase.from('stories').insert(input).select().single()
+    const { data, error } = await supabase
+      .from('stories')
+      .insert({
+        title: input.title,
+        cover: input.cover || null,
+        total_seasons: input.total_seasons || 1,
+        status: input.status || 'playing',
+        current_season: input.current_season || 1,
+        current_episode: input.current_episode || 1,
+        notes: input.notes || '',
+      })
+      .select()
+      .single()
+    
     if (error) throw error
     return data as Story
   },
 
   async updateStory(id: string, input: UpdateStoryInput): Promise<void> {
-    const { error } = await supabase.from('stories').update(input).eq('id', id)
+    const updateData: Record<string, any> = {}
+    if (input.title !== undefined) updateData.title = input.title
+    if (input.cover !== undefined) updateData.cover = input.cover
+    if (input.total_seasons !== undefined) updateData.total_seasons = input.total_seasons
+    if (input.status !== undefined) updateData.status = input.status
+    if (input.current_season !== undefined) updateData.current_season = input.current_season
+    if (input.current_episode !== undefined) updateData.current_episode = input.current_episode
+    if (input.notes !== undefined) updateData.notes = input.notes
+
+    const { error } = await supabase.from('stories').update(updateData).eq('id', id)
     if (error) throw error
   },
 
@@ -33,20 +57,54 @@ export const wardrobeService = {
     if (error) throw error
   },
 
+  // ─── ПРЕДМЕТЫ ГАРДЕРОБА ────────────────────
+
   async getItemsByStory(story_id: string): Promise<WardrobeItem[]> {
-    const { data, error } = await supabase.from('wardrobe_items').select('*').eq('story_id', story_id).order('created_at', { ascending: false })
+    const { data, error } = await supabase
+      .from('wardrobe_items')
+      .select('*')
+      .eq('story_id', story_id)
+      .order('created_at', { ascending: false })
     if (error) throw error
     return (data || []) as WardrobeItem[]
   },
 
   async createItem(input: CreateWardrobeItemInput): Promise<WardrobeItem> {
-    const { data, error } = await supabase.from('wardrobe_items').insert(input).select().single()
+    const { data, error } = await supabase
+      .from('wardrobe_items')
+      .insert({
+        story_id: input.story_id,
+        category: input.category,
+        name: input.name,
+        image: input.image || null,
+        season: input.season,
+        episode: input.episode,
+        cost_type: input.cost_type || 'free',
+        diamond_cost: input.diamond_cost || 0,
+        stat_name: input.stat_name || '',
+        stat_cost: input.stat_cost || 0,
+        notes: input.notes || '',
+      })
+      .select()
+      .single()
     if (error) throw error
     return data as WardrobeItem
   },
 
   async updateItem(id: string, input: UpdateWardrobeItemInput): Promise<void> {
-    const { error } = await supabase.from('wardrobe_items').update(input).eq('id', id)
+    const updateData: Record<string, any> = {}
+    if (input.name !== undefined) updateData.name = input.name
+    if (input.category !== undefined) updateData.category = input.category
+    if (input.image !== undefined) updateData.image = input.image
+    if (input.season !== undefined) updateData.season = input.season
+    if (input.episode !== undefined) updateData.episode = input.episode
+    if (input.cost_type !== undefined) updateData.cost_type = input.cost_type
+    if (input.diamond_cost !== undefined) updateData.diamond_cost = input.diamond_cost
+    if (input.stat_name !== undefined) updateData.stat_name = input.stat_name
+    if (input.stat_cost !== undefined) updateData.stat_cost = input.stat_cost
+    if (input.notes !== undefined) updateData.notes = input.notes
+
+    const { error } = await supabase.from('wardrobe_items').update(updateData).eq('id', id)
     if (error) throw error
   },
 

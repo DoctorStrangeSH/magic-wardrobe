@@ -21,26 +21,31 @@ class WardrobeDatabase extends Dexie {
       items: 'id, storyId, category, isOwned, isWishlist, [storyId+category], [storyId+isOwned]',
     })
 
-    // Хуки для автоматического обновления updatedAt
+    // Хуки для stories
+    // При создании: проставляем даты, только если их нет (не перезаписываем при импорте)
     this.stories.hook('creating', (_primKey, obj) => {
       const now = new Date()
-      obj.createdAt = now
-      obj.updatedAt = now
+      if (!obj.createdAt) obj.createdAt = now
+      if (!obj.updatedAt) obj.updatedAt = now
       return obj
     })
 
+    // При обновлении: всегда обновляем updatedAt
     this.stories.hook('updating', (modifications, _primKey, _obj) => {
       ;(modifications as Record<string, unknown>).updatedAt = new Date()
       return modifications
     })
 
+    // Хуки для items
+    // При создании: проставляем даты, только если их нет (не перезаписываем при импорте)
     this.items.hook('creating', (_primKey, obj) => {
       const now = new Date()
-      obj.createdAt = now
-      obj.updatedAt = now
+      if (!obj.createdAt) obj.createdAt = now
+      if (!obj.updatedAt) obj.updatedAt = now
       return obj
     })
 
+    // При обновлении: всегда обновляем updatedAt
     this.items.hook('updating', (modifications, _primKey, _obj) => {
       ;(modifications as Record<string, unknown>).updatedAt = new Date()
       return modifications
@@ -93,15 +98,6 @@ class WardrobeDatabase extends Dexie {
     return this.items.where('[storyId+category]').equals([storyId, category]).toArray()
   }
 
-  /** Получить предметы по статусу владения */
-  async getItemsByOwnership(storyId: string, isOwned: boolean): Promise<WardrobeItem[]> {
-    const ownedValue = isOwned ? 1 : 0
-    return this.items
-      .where('storyId').equals(storyId)
-      .filter(item => item.isOwned === isOwned)
-      .toArray()
-  }
-
   /** Добавить новый предмет */
   async addItem(item: Omit<WardrobeItem, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     const id = crypto.randomUUID()
@@ -125,20 +121,6 @@ class WardrobeDatabase extends Dexie {
     await this.items.delete(id)
   }
 
-  /** Массово отметить предметы в серии как полученные */
-  async markSeriesAsOwned(storyId: string, season: number, episode: number): Promise<void> {
-    const items = await this.items
-      .where('storyId').equals(storyId)
-      .filter(item => item.season === season && item.episode === episode && !item.isOwned)
-      .toArray()
-
-    await this.transaction('rw', this.items, async () => {
-      for (const item of items) {
-        await this.items.update(item.id, { isOwned: true } as Partial<WardrobeItem>)
-      }
-    })
-  }
-
   /** Экспортировать все данные в JSON */
   async exportAllData(): Promise<string> {
     const stories = await this.stories.toArray()
@@ -159,10 +141,12 @@ class WardrobeDatabase extends Dexie {
       await this.stories.clear()
       await this.items.clear()
 
-      // Добавляем новые
+      // Добавляем истории с сохранением оригинальных дат
       if (data.stories && Array.isArray(data.stories)) {
         await this.stories.bulkAdd(data.stories)
       }
+
+      // Добавляем предметы с сохранением оригинальных дат
       if (data.items && Array.isArray(data.items)) {
         await this.items.bulkAdd(data.items)
       }

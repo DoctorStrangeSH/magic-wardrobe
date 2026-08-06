@@ -33,7 +33,7 @@ export const wardrobeService = {
       })
       .select()
       .single()
-    
+
     if (error) throw error
     return data as Story
   },
@@ -213,20 +213,60 @@ export const wardrobeService = {
 
   async importData(jsonData: string): Promise<void> {
     const data = JSON.parse(jsonData)
+
+    // Конвертируем camelCase в snake_case для историй
     if (data.stories?.length > 0) {
-      const { error } = await supabase.from('stories').insert(data.stories)
+      const stories = data.stories.map((s: any) => ({
+        id: s.id,
+        title: s.title,
+        cover: s.cover,
+        total_seasons: s.total_seasons || s.totalSeasons || 1,
+        status: s.status,
+        current_season: s.current_season || s.currentSeason || 1,
+        current_episode: s.current_episode || s.currentEpisode || 1,
+        notes: s.notes || '',
+        created_at: s.created_at || s.createdAt || new Date().toISOString(),
+        updated_at: s.updated_at || s.updatedAt || new Date().toISOString(),
+      }))
+
+      const { error } = await supabase.from('stories').insert(stories)
       if (error) throw error
     }
+
+    // Конвертируем camelCase в snake_case для нарядов
     if (data.items?.length > 0) {
-      for (let i = 0; i < data.items.length; i += 50) {
-        const { error } = await supabase.from('wardrobe_items').insert(data.items.slice(i, i + 50))
+      const items = data.items.map((i: any) => ({
+        id: i.id,
+        story_id: i.story_id || i.storyId,
+        category: i.category,
+        name: i.name,
+        image: i.image,
+        season: i.season,
+        episode: i.episode,
+        cost_type: i.cost_type || i.costType || 'free',
+        diamond_cost: i.diamond_cost || i.diamondCost || 0,
+        stat_name: i.stat_name || i.statName || '',
+        stat_cost: i.stat_cost || i.statCost || 0,
+        notes: i.notes || '',
+        created_at: i.created_at || i.createdAt || new Date().toISOString(),
+        updated_at: i.updated_at || i.updatedAt || new Date().toISOString(),
+      }))
+
+      for (let i = 0; i < items.length; i += 50) {
+        const { error } = await supabase.from('wardrobe_items').insert(items.slice(i, i + 50))
         if (error) throw error
       }
     }
+
     if (data.progress?.length > 0) {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const { error } = await supabase.from('user_progress').insert(data.progress.map((p: any) => ({ ...p, user_id: user.id })))
+        const progress = data.progress.map((p: any) => ({
+          user_id: user.id,
+          item_id: p.item_id || p.itemId,
+          is_owned: p.is_owned !== undefined ? p.is_owned : (p.isOwned || false),
+        }))
+        const { error } = await supabase.from('user_progress').insert(progress)
         if (error) throw error
       }
     }

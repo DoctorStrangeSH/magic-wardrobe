@@ -1,5 +1,6 @@
 export type StoryStatus = 'playing' | 'completed' | 'paused'
 export type WardrobeCategory = 'dress' | 'hairstyle' | 'accessory' | 'makeup'
+export type CostType = 'free' | 'diamond' | 'stats'
 
 export interface Story {
   id: string
@@ -22,8 +23,10 @@ export interface WardrobeItem {
   image: string | null
   season: number
   episode: number
-  isFree: boolean
-  diamondCost: number
+  costType: CostType          // free, diamond, stats
+  diamondCost: number         // 0 если не алмазы
+  statName: string            // "Рациональность", "Сострадание", "Слава" и т.д.
+  statCost: number            // количество статов
   isOwned: boolean
   isWishlist: boolean
   notes: string
@@ -48,6 +51,7 @@ export interface StoryStats {
     percentage: number
   }>
   totalDiamondsSpent: number
+  totalStatsSpent: number     // сумма всех статов
 }
 
 export interface OverallStats {
@@ -57,6 +61,7 @@ export interface OverallStats {
   ownedItems: number
   overallPercentage: number
   totalDiamondsSpent: number
+  totalStatsSpent: number     // сумма всех статов
   wishlistItems: number
   storiesBreakdown: Array<{
     storyId: string
@@ -79,4 +84,10 @@ export const CATEGORY_ICONS: Record<WardrobeCategory, string> = {
   hairstyle: '💇‍♀️',
   accessory: '💍',
   makeup: '💄',
+}
+
+export const COST_TYPE_LABELS: Record<CostType, string> = {
+  free: 'Бесплатно',
+  diamond: 'За алмазы',
+  stats: 'За статы',
 }

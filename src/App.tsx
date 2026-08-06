@@ -4,11 +4,23 @@ import StoriesList from './components/stories/StoriesList'
 import WardrobePage from './components/wardrobe/WardrobePage'
 import DashboardPage from './components/dashboard/DashboardPage'
 import SettingsPage from './components/settings/SettingsPage'
+import LoginPage from './components/auth/LoginPage'
+import RegisterPage from './components/auth/RegisterPage'
+import AuthGuard from './components/auth/AuthGuard'
 
 function App() {
   return (
     <Routes>
-      <Route element={<AppLayout />}>
+      {/* Публичные страницы */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+
+      {/* Защищённые страницы */}
+      <Route element={
+        <AuthGuard>
+          <AppLayout />
+        </AuthGuard>
+      }>
         <Route path="/" element={<StoriesList />} />
         <Route path="/story/:storyId" element={<WardrobePage />} />
         <Route path="/stats" element={<DashboardPage />} />

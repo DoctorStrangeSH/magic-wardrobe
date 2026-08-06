@@ -14,17 +14,24 @@ interface ItemDetailModalProps {
 
 export default function ItemDetailModal({ isOpen, onClose, item, onToggleOwned }: ItemDetailModalProps) {
   if (!isOpen) return null
-  const costType = item.costType || 'free'
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-romantic-darker/60 backdrop-blur-sm"
-      onClick={onClose}>
-      <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto romantic-card rounded-3xl shadow-magic-lg border border-romantic-gold/20">
-
-        <button onClick={onClose} className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/80 text-romantic-dark/60 hover:text-romantic-crimson transition-colors">
+        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto romantic-card rounded-3xl shadow-magic-lg border border-romantic-gold/20"
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/80 text-romantic-dark/60 hover:text-romantic-crimson transition-colors"
+        >
           <X size={20} />
         </button>
 
@@ -58,15 +65,15 @@ export default function ItemDetailModal({ isOpen, onClose, item, onToggleOwned }
             </div>
 
             <div className="flex items-start gap-3 p-3 rounded-xl bg-romantic-pink/20">
-              {costType === 'free' && <ShoppingBag size={20} className="text-emerald-500 flex-shrink-0 mt-0.5" />}
-              {costType === 'diamond' && <Diamond size={20} className="text-blue-500 flex-shrink-0 mt-0.5" />}
-              {costType === 'stats' && <TrendingUp size={20} className="text-purple-500 flex-shrink-0 mt-0.5" />}
+              {item.cost_type === 'free' && <ShoppingBag size={20} className="text-emerald-500 flex-shrink-0 mt-0.5" />}
+              {item.cost_type === 'diamond' && <Diamond size={20} className="text-blue-500 flex-shrink-0 mt-0.5" />}
+              {item.cost_type === 'stats' && <TrendingUp size={20} className="text-purple-500 flex-shrink-0 mt-0.5" />}
               <div>
                 <p className="text-xs text-romantic-dark/50 font-nunito">Стоимость</p>
                 <p className="font-nunito font-semibold text-romantic-dark">
-                  {costType === 'free' && <span className="text-emerald-600">Бесплатно 🆓</span>}
-                  {costType === 'diamond' && <span className="text-blue-600">{item.diamondCost} 💎</span>}
-                  {costType === 'stats' && <span className="text-purple-600">{item.statCost} {item.statName} 📊</span>}
+                  {item.cost_type === 'free' && <span className="text-emerald-600">Бесплатно 🆓</span>}
+                  {item.cost_type === 'diamond' && <span className="text-blue-600">{item.diamond_cost} 💎</span>}
+                  {item.cost_type === 'stats' && <span className="text-purple-600">{item.stat_cost} {item.stat_name} 📊</span>}
                 </p>
               </div>
             </div>
@@ -74,10 +81,16 @@ export default function ItemDetailModal({ isOpen, onClose, item, onToggleOwned }
 
           <div className="flex items-center justify-between p-4 rounded-2xl bg-romantic-pink/20">
             <div className="flex items-center gap-3">
-              {item.isOwned ? <CheckCircle2 size={24} className="text-emerald-500" /> : <AlertCircle size={24} className="text-romantic-gold/50" />}
-              <span className="font-nunito text-sm text-romantic-dark">{item.isOwned ? 'Наряд получен ✅' : 'Наряд ещё не получен'}</span>
+              {item.is_owned ? (
+                <CheckCircle2 size={24} className="text-emerald-500" />
+              ) : (
+                <AlertCircle size={24} className="text-romantic-gold/50" />
+              )}
+              <span className="font-nunito text-sm text-romantic-dark">
+                {item.is_owned ? 'Наряд получен ✅' : 'Наряд ещё не получен'}
+              </span>
             </div>
-            <Checkbox checked={item.isOwned} onChange={onToggleOwned} />
+            <Checkbox checked={item.is_owned} onChange={onToggleOwned} />
           </div>
 
           {item.notes && item.notes.trim() && (
@@ -85,7 +98,9 @@ export default function ItemDetailModal({ isOpen, onClose, item, onToggleOwned }
               <div className="flex items-start gap-3">
                 <AlertCircle size={20} className="text-romantic-crimson flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-nunito font-bold text-romantic-crimson uppercase tracking-wider mb-1">⚠️ Особые условия получения</p>
+                  <p className="text-xs font-nunito font-bold text-romantic-crimson uppercase tracking-wider mb-1">
+                    ⚠️ Особые условия получения
+                  </p>
                   <p className="text-sm font-nunito text-romantic-dark/80 leading-relaxed">{item.notes}</p>
                 </div>
               </div>

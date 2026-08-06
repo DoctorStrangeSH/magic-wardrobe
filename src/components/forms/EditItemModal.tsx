@@ -47,11 +47,11 @@ export default function EditItemModal({ isOpen, onClose, item }: EditItemModalPr
       setImage(item.image)
       setSeason(item.season)
       setEpisode(item.episode)
-      setCostType(item.costType || 'free')
-      setDiamondCost(item.diamondCost || 0)
-      setStatName(item.statName || '')
-      setStatCost(item.statCost || 0)
-      setIsOwned(item.isOwned)
+      setCostType(item.cost_type || 'free')
+      setDiamondCost(item.diamond_cost || 0)
+      setStatName(item.stat_name || '')
+      setStatCost(item.stat_cost || 0)
+      setIsOwned(item.is_owned)
       setNotes(item.notes)
       setError('')
     }
@@ -73,12 +73,17 @@ export default function EditItemModal({ isOpen, onClose, item }: EditItemModalPr
     setIsSubmitting(true)
     try {
       await updateItem(item.id, {
-        name: name.trim(), category, image, season, episode,
-        costType,
-        diamondCost: costType === 'diamond' ? diamondCost : 0,
-        statName: costType === 'stats' ? statName.trim() : '',
-        statCost: costType === 'stats' ? statCost : 0,
-        isOwned, notes: notes.trim(),
+        name: name.trim(),
+        category,
+        image,
+        season,
+        episode,
+        cost_type: costType,
+        diamond_cost: costType === 'diamond' ? diamondCost : 0,
+        stat_name: costType === 'stats' ? statName.trim() : '',
+        stat_cost: costType === 'stats' ? statCost : 0,
+        is_owned: isOwned,
+        notes: notes.trim(),
       })
       onClose()
     } catch (err) {
@@ -132,7 +137,6 @@ export default function EditItemModal({ isOpen, onClose, item }: EditItemModalPr
           </div>
         </div>
 
-        {/* Тип наряда */}
         <div>
           <label className="block text-sm font-nunito font-medium text-romantic-dark mb-1.5">Тип наряда</label>
           <div className="grid grid-cols-3 gap-2">
@@ -159,7 +163,7 @@ export default function EditItemModal({ isOpen, onClose, item }: EditItemModalPr
               <input type="number" inputMode="numeric" pattern="[0-9]*" min={1} value={diamondCost || ''}
                 onChange={(e) => setDiamondCost(Math.max(0, parseInt(e.target.value) || 0))}
                 onWheel={handleWheel} placeholder="Например: 30"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-blue-300 bg-white/70 text-romantic-dark font-nunito text-base focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200 transition-all" />
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-blue-300 bg-white/70 text-romantic-dark font-nunito text-base placeholder:text-romantic-dark/30 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200 transition-all" />
             </div>
           </div>
         )}
@@ -180,7 +184,7 @@ export default function EditItemModal({ isOpen, onClose, item }: EditItemModalPr
               <input type="number" inputMode="numeric" pattern="[0-9]*" min={1} value={statCost || ''}
                 onChange={(e) => setStatCost(Math.max(0, parseInt(e.target.value) || 0))}
                 onWheel={handleWheel} placeholder="70"
-                className="w-full px-4 py-2.5 rounded-xl border border-purple-300 bg-white/70 text-romantic-dark font-nunito text-base focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-200 transition-all" />
+                className="w-full px-4 py-2.5 rounded-xl border border-purple-300 bg-white/70 text-romantic-dark font-nunito text-base placeholder:text-romantic-dark/30 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-200 transition-all" />
             </div>
           </div>
         )}

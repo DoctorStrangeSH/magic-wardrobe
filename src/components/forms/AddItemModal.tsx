@@ -42,7 +42,7 @@ export default function AddItemModal({ isOpen, onClose, storyId, quickMode = fal
   const [error, setError] = useState('')
   const [addedCount, setAddedCount] = useState(0)
   const [showSuccess, setShowSuccess] = useState(false)
-  
+
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -86,12 +86,19 @@ export default function AddItemModal({ isOpen, onClose, storyId, quickMode = fal
     setIsSubmitting(true)
     try {
       await createItem({
-        storyId, category, name: name.trim(), image, season, episode,
-        costType,
-        diamondCost: costType === 'diamond' ? diamondCost : 0,
-        statName: costType === 'stats' ? statName.trim() : '',
-        statCost: costType === 'stats' ? statCost : 0,
-        isOwned, isWishlist: false, notes: notes.trim(),
+        story_id: storyId,
+        category,
+        name: name.trim(),
+        image,
+        season,
+        episode,
+        cost_type: costType,
+        diamond_cost: costType === 'diamond' ? diamondCost : 0,
+        stat_name: costType === 'stats' ? statName.trim() : '',
+        stat_cost: costType === 'stats' ? statCost : 0,
+        is_owned: isOwned,
+        is_wishlist: false,
+        notes: notes.trim(),
       })
 
       if (closeAfter || !quickMode) {
@@ -165,7 +172,6 @@ export default function AddItemModal({ isOpen, onClose, storyId, quickMode = fal
           </div>
         </div>
 
-        {/* Тип наряда: три кнопки */}
         <div>
           <label className="block text-sm font-nunito font-medium text-romantic-dark mb-1.5">Тип наряда</label>
           <div className="grid grid-cols-3 gap-2">
@@ -184,7 +190,6 @@ export default function AddItemModal({ isOpen, onClose, storyId, quickMode = fal
           </div>
         </div>
 
-        {/* Поле для алмазов */}
         {costType === 'diamond' && (
           <div>
             <label className="block text-sm font-nunito font-medium text-romantic-dark mb-1.5">Стоимость в алмазах *</label>
@@ -198,15 +203,13 @@ export default function AddItemModal({ isOpen, onClose, storyId, quickMode = fal
           </div>
         )}
 
-        {/* Поля для статов */}
         {costType === 'stats' && (
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-nunito font-medium text-romantic-dark mb-1.5">Название стата *</label>
               <div className="relative">
                 <TrendingUp size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-400" />
-                <input type="text" value={statName}
-                  onChange={(e) => setStatName(e.target.value)}
+                <input type="text" value={statName} onChange={(e) => setStatName(e.target.value)}
                   placeholder="Рациональность"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-purple-300 bg-white/70 text-romantic-dark font-nunito text-base placeholder:text-romantic-dark/30 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-200 transition-all" />
               </div>

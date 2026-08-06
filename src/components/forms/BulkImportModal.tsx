@@ -11,19 +11,6 @@ interface BulkImportModalProps {
   storyId: string
 }
 
-/**
- * Формат строки импорта:
- * Название | категория | сезон | серия | тип | стоимость | примечание
- * 
- * Типы: free/бесплатно, diamond/алмазы/30, stats/рациональность/70
- * 
- * Примеры:
- *   Плащ тайны | dress | 2 | 5 | diamond | 30 | Нужен выбор
- *   Корона | аксессуар | 2 | 5 | бесплатно
- *   Платье силы | dress | 3 | 6 | stats | Рациональность | 70 | Нужно 70 статов
- *   Grave | dress | 3 | 12 | free | | Добавляется автоматически
- */
-
 const CATEGORY_MAP: Record<string, WardrobeCategory> = {
   'dress': 'dress', 'dresses': 'dress', 'outfit': 'dress', 'clothes': 'dress', 'gown': 'dress',
   'hairstyle': 'hairstyle', 'hair': 'hairstyle', 'hairstyles': 'hairstyle', 'hairdo': 'hairstyle',
@@ -32,7 +19,6 @@ const CATEGORY_MAP: Record<string, WardrobeCategory> = {
   'bag': 'accessory', 'belt': 'accessory', 'scarf': 'accessory', 'gloves': 'accessory',
   'crown': 'accessory', 'tiara': 'accessory', 'wings': 'accessory', 'mask': 'accessory',
   'makeup': 'makeup', 'make-up': 'makeup', 'cosmetics': 'makeup',
-  // Русские
   'платье': 'dress', 'костюм': 'dress', 'наряд': 'dress', 'одежда': 'dress',
   'причёска': 'hairstyle', 'прическа': 'hairstyle', 'волосы': 'hairstyle', 'стрижка': 'hairstyle',
   'аксессуар': 'accessory', 'украшение': 'accessory', 'серьги': 'accessory', 'колье': 'accessory',
@@ -68,53 +54,50 @@ export default function BulkImportModal({ isOpen, onClose, storyId }: BulkImport
       try {
         const parts = line.split('|').map(p => p.trim())
         if (parts.length < 5) {
-          errors.push(`Строка ${i + 1}: минимум 5 полей (название | категория | сезон | серия | тип)`)
+          errors.push(`Строка ${i + 1}: минимум 5 полей`)
           continue
         }
 
         const [name, categoryRaw, seasonStr, episodeStr, typeRaw, ...rest] = parts
-        
+
         const category: WardrobeCategory = CATEGORY_MAP[categoryRaw.toLowerCase()] || 'dress'
         const season = Math.max(1, parseInt(seasonStr) || 1)
         const episode = Math.max(1, parseInt(episodeStr) || 1)
         const typeLower = typeRaw.toLowerCase()
 
-        // Определяем тип
-        let costType: 'free' | 'diamond' | 'stats' = 'free'
-        let diamondCost = 0
-        let statName = ''
-        let statCost = 0
+        let cost_type: 'free' | 'diamond' | 'stats' = 'free'
+        let diamond_cost = 0
+        let stat_name = ''
+        let stat_cost = 0
         let notes = ''
 
         if (FREE_WORDS.includes(typeLower)) {
-          costType = 'free'
+          cost_type = 'free'
           notes = rest.filter(r => r !== '' && r !== '0').join(' | ').trim()
         } else if (DIAMOND_WORDS.includes(typeLower)) {
-          costType = 'diamond'
-          // Ищем стоимость в rest
+          cost_type = 'diamond'
           let costIndex = 0
           while (costIndex < rest.length && rest[costIndex] === '') costIndex++
           if (costIndex < rest.length) {
             const costValue = parseInt(rest[costIndex])
             if (!isNaN(costValue) && costValue > 0) {
-              diamondCost = costValue
+              diamond_cost = costValue
               notes = rest.slice(costIndex + 1).filter(r => r !== '').join(' | ').trim()
             } else {
               notes = rest.filter(r => r !== '').join(' | ').trim()
             }
           }
         } else if (STATS_WORDS.includes(typeLower)) {
-          costType = 'stats'
-          // Формат: stats | НазваниеСтата | Количество | примечание
+          cost_type = 'stats'
           let statIndex = 0
           while (statIndex < rest.length && rest[statIndex] === '') statIndex++
           if (statIndex < rest.length) {
-            statName = rest[statIndex]
+            stat_name = rest[statIndex]
             const costIndex = statIndex + 1
             if (costIndex < rest.length) {
               const costValue = parseInt(rest[costIndex])
               if (!isNaN(costValue) && costValue > 0) {
-                statCost = costValue
+                stat_cost = costValue
                 notes = rest.slice(costIndex + 1).filter(r => r !== '').join(' | ').trim()
               } else {
                 notes = rest.slice(statIndex + 1).filter(r => r !== '').join(' | ').trim()
@@ -122,32 +105,37 @@ export default function BulkImportModal({ isOpen, onClose, storyId }: BulkImport
             }
           }
         } else {
-          // Пытаемся угадать: если первый rest — число, то diamond
-          const firstRest = rest[0]
+          const firstRest = rest[0] || ''
           const firstNum = parseInt(firstRest)
           if (!isNaN(firstNum) && firstNum > 0 && rest.length > 1 && isNaN(parseInt(rest[1]))) {
-            // Похоже на stats: алмазы | Название | Число
-            costType = 'stats'
-            statName = rest[1]
-            statCost = firstNum
+            cost_type = 'stats'
+            stat_name = rest[1]
+            stat_cost = firstNum
             notes = rest.slice(2).filter(r => r !== '').join(' | ').trim()
           } else if (!isNaN(firstNum) && firstNum > 0) {
-            costType = 'diamond'
-            diamondCost = firstNum
+            cost_type = 'diamond'
+            diamond_cost = firstNum
             notes = rest.slice(1).filter(r => r !== '').join(' | ').trim()
           } else {
-            costType = 'free'
+            cost_type = 'free'
             notes = rest.filter(r => r !== '' && r !== '0').join(' | ').trim()
           }
         }
 
         await createItem({
-          storyId, category, name, image: null, season, episode,
-          costType,
-          diamondCost: costType === 'diamond' ? diamondCost : 0,
-          statName: costType === 'stats' ? statName : '',
-          statCost: costType === 'stats' ? statCost : 0,
-          isOwned: false, isWishlist: false, notes,
+          story_id: storyId,
+          category,
+          name,
+          image: null,
+          season,
+          episode,
+          cost_type,
+          diamond_cost: cost_type === 'diamond' ? diamond_cost : 0,
+          stat_name: cost_type === 'stats' ? stat_name : '',
+          stat_cost: cost_type === 'stats' ? stat_cost : 0,
+          is_owned: false,
+          is_wishlist: false,
+          notes,
         })
 
         success++

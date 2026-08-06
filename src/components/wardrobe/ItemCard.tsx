@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Diamond, Edit3, Trash2, MoreVertical, Eye, Star, TrendingUp } from 'lucide-react'
 import type { WardrobeItem } from '../../core/types/wardrobe'
@@ -51,7 +51,6 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
   }
 
   const hasSpecialCondition = item.notes && item.notes.trim().length > 0
-  const costType = item.costType || 'free'
 
   return (
     <>
@@ -62,15 +61,14 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
         onMouseLeave={() => { setIsHovered(false); setShowDeleteConfirm(false); setShowMenu(false) }}
         whileHover={{ scale: 1.01 }}
         onClick={handleCardClick}
-        className={`group relative romantic-card rounded-2xl overflow-hidden shadow-card hover:shadow-lg cursor-pointer transition-shadow duration-200 ${item.isOwned ? 'ring-1 ring-romantic-gold/30' : ''}`}
+        className={`group relative romantic-card rounded-2xl overflow-hidden shadow-card hover:shadow-lg cursor-pointer transition-shadow duration-200 ${item.is_owned ? 'ring-1 ring-romantic-gold/30' : ''}`}
       >
-        {costType === 'diamond' && !item.isOwned && <ShimmerEffect />}
+        {item.cost_type === 'diamond' && !item.is_owned && <ShimmerEffect />}
 
         <div className="relative w-full bg-gradient-to-br from-romantic-pink/30 to-romantic-dark/3 flex items-center justify-center overflow-hidden">
           {item.image ? (
             <div className="w-full" style={{ maxHeight: '260px' }}>
-              <img src={item.image} alt={item.name} loading="lazy"
-                className="w-full h-auto max-h-[260px] object-contain transition-transform duration-300 group-hover:scale-105" />
+              <img src={item.image} alt={item.name} loading="lazy" className="w-full h-auto max-h-[260px] object-contain transition-transform duration-300 group-hover:scale-105" />
             </div>
           ) : (
             <div className="py-10 text-center">
@@ -80,7 +78,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
             </div>
           )}
 
-          {!item.isOwned && hasSpecialCondition && (
+          {!item.is_owned && hasSpecialCondition && (
             <div className="absolute top-2 left-2 z-10">
               <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-nunito font-bold shadow-md">
                 <Star size={10} className="fill-white" /> Особые условия
@@ -89,8 +87,7 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
           )}
 
           <div className="absolute top-2 right-2 z-10" data-no-detail>
-            <button onClick={handleMenuToggle}
-              className="w-7 h-7 rounded-lg bg-white/85 backdrop-blur-sm flex items-center justify-center text-romantic-dark/50 hover:text-romantic-dark hover:bg-white transition-all shadow-sm">
+            <button onClick={handleMenuToggle} className="w-7 h-7 rounded-lg bg-white/85 backdrop-blur-sm flex items-center justify-center text-romantic-dark/50 hover:text-romantic-dark hover:bg-white transition-all shadow-sm">
               <MoreVertical size={14} />
             </button>
           </div>
@@ -132,16 +129,16 @@ export default function ItemCard({ item, onEdit }: ItemCardProps) {
           <p className="text-[10px] text-romantic-dark/40 font-nunito">Сезон {item.season}, Серия {item.episode}</p>
 
           <div className="flex items-center justify-between">
-            {costType === 'free' && <Badge variant="free" icon={<span>🆓</span>}>Бесплатно</Badge>}
-            {costType === 'diamond' && <Badge variant="diamond" icon={<Diamond size={10} />}>{item.diamondCost} 💎</Badge>}
-            {costType === 'stats' && (
+            {item.cost_type === 'free' && <Badge variant="free" icon={<span>🆓</span>}>Бесплатно</Badge>}
+            {item.cost_type === 'diamond' && <Badge variant="diamond" icon={<Diamond size={10} />}>{item.diamond_cost} 💎</Badge>}
+            {item.cost_type === 'stats' && (
               <Badge variant="default" icon={<TrendingUp size={10} className="text-purple-500" />}>
-                <span className="text-purple-600">{item.statCost} {item.statName}</span>
+                <span className="text-purple-600">{item.stat_cost} {item.stat_name}</span>
               </Badge>
             )}
 
             <div onClick={handleToggleOwned} data-no-detail className="cursor-pointer z-10 p-1 -m-1">
-              <Checkbox checked={item.isOwned} onChange={() => {}} />
+              <Checkbox checked={item.is_owned} onChange={() => {}} />
             </div>
           </div>
         </div>

@@ -121,6 +121,20 @@ class WardrobeDatabase extends Dexie {
     await this.items.delete(id)
   }
 
+  /** Массово отметить предметы в серии как полученные */
+  async markSeriesAsOwned(storyId: string, season: number, episode: number): Promise<void> {
+    const items = await this.items
+      .where('storyId').equals(storyId)
+      .filter(item => item.season === season && item.episode === episode && !item.isOwned)
+      .toArray()
+
+    await this.transaction('rw', this.items, async () => {
+      for (const item of items) {
+        await this.items.update(item.id, { isOwned: true } as Partial<WardrobeItem>)
+      }
+    })
+  }
+
   /** Экспортировать все данные в JSON */
   async exportAllData(): Promise<string> {
     const stories = await this.stories.toArray()

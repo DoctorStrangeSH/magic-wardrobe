@@ -104,6 +104,7 @@ export default function DashboardPage() {
         ownedItems={overallStats.ownedItems}
         overallPercentage={overallStats.overallPercentage}
         totalDiamondsSpent={overallStats.totalDiamondsSpent}
+        totalStatsSpent={overallStats.totalStatsSpent}
         wishlistItems={overallStats.wishlistItems}
       />
 
